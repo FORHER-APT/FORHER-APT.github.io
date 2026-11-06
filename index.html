@@ -1,0 +1,4344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>BLOOM — Watch Something Beautiful Grow</title>
+  <meta name="description" content="An emotional interactive digital garden. Plant something small and watch an entire botanical world bloom into life.">
+  
+  <!-- Open Graph / Meta -->
+  <meta property="og:title" content="BLOOM — Someone Planted a Garden for You">
+  <meta property="og:description" content="Hold to bloom and watch an entire realistic botanical garden come to life.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0E0E10">
+  
+  <!-- Fonts: High-Fashion Editorial Serif + Clean Modern Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Plus+Jakarta+Sans:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM & CSS VARIABLES
+       ========================================================================== */
+    :root {
+      --font-serif: 'Cormorant Garamond', Garamond, Georgia, serif;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      
+      /* Editorial Palette */
+      --ivory: #F7F4EB;
+      --ivory-muted: rgba(247, 244, 235, 0.72);
+      --ivory-dim: rgba(247, 244, 235, 0.40);
+      --ivory-faint: rgba(247, 244, 235, 0.12);
+      
+      --night-black: #0E0E10;
+      --night-deep: #070709;
+      --botanical-dark: #101712;
+      --botanical-stem: #2B3D2A;
+      --botanical-stem-light: #486644;
+      
+      --gold-accent: #E5C384;
+      --gold-glow: rgba(229, 195, 132, 0.28);
+      
+      /* Dynamic Lighting State Variables */
+      --sky-top: #06070A;
+      --sky-mid: #0C0E15;
+      --sky-bottom: #08090C;
+      --sun-glow-opacity: 0;
+      --sun-glow-color: rgba(255, 205, 150, 0.22);
+      --sun-glow-y: 65%;
+      --light-beam-opacity: 0;
+      
+      /* Motion Easing */
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out-sine: cubic-bezier(0.37, 0, 0.63, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-organic: cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--night-deep);
+      font-family: var(--font-sans);
+      color: var(--ivory);
+      position: fixed;
+      inset: 0;
+    }
+
+    /* ==========================================================================
+       BACKGROUND & DYNAMIC LIGHTING ATMOSPHERE
+       ========================================================================== */
+    #atmosphere {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% var(--sun-glow-y), var(--sky-mid) 0%, var(--sky-top) 72%, var(--sky-bottom) 100%);
+      transition: background 6.5s var(--ease-organic);
+      will-change: background;
+    }
+
+    #sunGlow {
+      position: absolute;
+      left: 50%;
+      top: var(--sun-glow-y);
+      transform: translate(-50%, -50%);
+      width: 135vw;
+      height: 135vw;
+      max-width: 1600px;
+      max-height: 1600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--sun-glow-color) 0%, rgba(255, 185, 130, 0.08) 35%, transparent 70%);
+      opacity: var(--sun-glow-opacity);
+      filter: blur(65px);
+      pointer-events: none;
+      z-index: 2;
+      transition: opacity 8s ease-in-out, top 9s ease-out;
+      will-change: opacity, top;
+    }
+
+    /* Morning Light Crepuscular Sunbeams */
+    #lightBeams {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 3;
+      pointer-events: none;
+      opacity: var(--light-beam-opacity);
+      background: radial-gradient(ellipse at 50% 0%, rgba(255, 240, 210, 0.14) 0%, rgba(255, 220, 170, 0.05) 50%, transparent 80%),
+                  linear-gradient(115deg, transparent 40%, rgba(255, 245, 220, 0.06) 48%, transparent 56%),
+                  linear-gradient(65deg, transparent 42%, rgba(255, 245, 220, 0.05) 50%, transparent 58%);
+      transition: opacity 7s ease-in-out;
+      mix-blend-mode: screen;
+    }
+
+    /* Fine Organic Film Grain */
+    .grain-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 4;
+      pointer-events: none;
+      opacity: 0.045;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* Vignette */
+    .vignette {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      background: radial-gradient(circle at 50% 50%, transparent 46%, rgba(8, 9, 12, 0.58) 100%);
+    }
+
+    /* Particle Canvas */
+    #particleCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 7;
+      pointer-events: none;
+    }
+
+    /* ==========================================================================
+       BOTANICAL SVG GARDEN CONTAINER & 3D DEPTH
+       ========================================================================== */
+    #sceneContainer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 6;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      overflow: hidden;
+      perspective: 1400px;
+    }
+
+    #gardenSvg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: auto;
+      overflow: visible;
+      will-change: transform;
+      transform-style: preserve-3d;
+      transition: transform 0.4s var(--ease-out-expo);
+    }
+
+    /* Depth of Field blur layers. Each one also carries the garden's light
+       response (--garden-lift / --garden-sat), which the atmosphere phases
+       drive as the sun comes up. */
+    .depth-background,
+    .depth-midground-back,
+    .depth-midground,
+    .depth-foreground {
+      transition: filter 6.5s var(--ease-organic);
+    }
+
+    .depth-background {
+      filter: blur(4.6px)
+              brightness(calc(0.78 * var(--garden-lift, 0.92)))
+              saturate(calc(0.92 * var(--garden-sat, 0.94)));
+      opacity: 0.74;
+      transform: translateZ(-110px);
+    }
+
+    .depth-midground-back {
+      filter: blur(1.7px)
+              brightness(calc(0.92 * var(--garden-lift, 0.92)))
+              saturate(var(--garden-sat, 0.94));
+      opacity: 0.93;
+      transform: translateZ(-45px);
+    }
+
+    .depth-midground {
+      filter: brightness(var(--garden-lift, 0.92)) saturate(var(--garden-sat, 0.94));
+      transform: translateZ(0);
+    }
+
+    .depth-foreground {
+      filter: blur(1.2px)
+              brightness(var(--garden-lift, 0.92))
+              saturate(var(--garden-sat, 0.94));
+      transform: translateZ(75px);
+    }
+
+    /* Botanical SVG Elements */
+    .botanical-stem {
+      fill: none;
+      filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45));
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0;
+      transition: stroke-dashoffset 2.6s var(--ease-organic), opacity 0.6s ease-out;
+      will-change: stroke-dashoffset, opacity;
+    }
+
+    .botanical-leaf {
+      transform-box: fill-box;
+      transform-origin: 0% 50%;
+      transform: scale(0.01) rotate(-15deg);
+      opacity: 0;
+      transition: transform 1.3s var(--ease-spring), opacity 0.8s ease-out;
+      cursor: pointer;
+    }
+
+    .botanical-leaf.unfolded {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+
+    .botanical-bud {
+      transform-box: fill-box;
+      transform-origin: 50% 90%;
+      transform: scale(0);
+      opacity: 0;
+      transition: transform 1.4s var(--ease-spring), opacity 0.7s ease-out;
+    }
+
+    .botanical-bud.visible {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    /* FLOWER GROUP: PRESERVES SVG TRANSFORM PRECISELY */
+    .flower-group {
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 1.2s ease-out, filter 0.4s ease;
+    }
+
+    .flower-group.revealed {
+      opacity: 1;
+    }
+
+    .flower-group:hover, .flower-group.active-tap {
+      filter: drop-shadow(0 0 20px rgba(245, 205, 145, 0.7)) brightness(1.2);
+    }
+
+    /* PETAL BLOOM: UNFURLS FROM ITS OWN BASE (fill-box keeps the anchor
+       correct no matter how the petal is rotated around the flower head) */
+    .petal {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      transform: scale(0.04) rotate(-10deg);
+      opacity: 0;
+      transition: transform 1.9s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.1s ease-out;
+    }
+
+    .petal.bloomed {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+
+    /* Organic Wind Sway Keyframes */
+    @keyframes windSwayA {
+      0%, 100% { transform: rotate(0deg) skewX(0deg); }
+      35% { transform: rotate(1.4deg) skewX(0.9deg); }
+      70% { transform: rotate(-1.2deg) skewX(-0.7deg); }
+    }
+
+    @keyframes windSwayB {
+      0%, 100% { transform: rotate(0deg) skewX(0deg); }
+      40% { transform: rotate(-1.6deg) skewX(-1.1deg); }
+      75% { transform: rotate(1.2deg) skewX(0.8deg); }
+    }
+
+    @keyframes windSwayGentle {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(0.9deg); }
+    }
+
+    .swaying-a {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      animation: windSwayA 7.2s ease-in-out infinite alternate;
+    }
+
+    .swaying-b {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      animation: windSwayB 8.8s ease-in-out infinite alternate;
+      animation-delay: -3.6s;
+    }
+
+    .swaying-gentle {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      animation: windSwayGentle 5.8s ease-in-out infinite alternate;
+      animation-delay: -2s;
+    }
+
+    /* ==========================================================================
+       POETIC MEANING TOOLTIP
+       ========================================================================== */
+    #poeticTag {
+      position: absolute;
+      z-index: 20;
+      pointer-events: none;
+      transform: translate(-50%, -100%) translateY(-18px);
+      padding: 7px 16px;
+      border-radius: 24px;
+      background: rgba(14, 15, 18, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(247, 244, 235, 0.16);
+      color: var(--ivory);
+      font-family: var(--font-serif);
+      font-size: 15px;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.4s var(--ease-out-expo), transform 0.4s var(--ease-out-expo);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+    }
+
+    #poeticTag.visible {
+      opacity: 1;
+      transform: translate(-50%, -100%) translateY(-24px);
+    }
+
+    #poeticTag .meaning-name {
+      font-weight: 500;
+      color: var(--gold-accent);
+      margin-right: 6px;
+    }
+
+    #poeticTag .meaning-desc {
+      font-style: italic;
+      color: var(--ivory-muted);
+    }
+
+    /* Easter Egg Banner */
+    #easterEggToast {
+      position: absolute;
+      top: 14%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      z-index: 25;
+      font-family: var(--font-serif);
+      font-size: 19px;
+      font-style: italic;
+      letter-spacing: 0.14em;
+      color: var(--ivory);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s var(--ease-out-expo), transform 1s var(--ease-out-expo);
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.85);
+    }
+
+    #easterEggToast.show {
+      opacity: 0.95;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ==========================================================================
+       HEADER & LOGO & SOUND TOGGLE
+       ========================================================================== */
+    header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 34px 40px;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .brand-logo {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 400;
+      letter-spacing: 0.38em;
+      text-transform: uppercase;
+      color: var(--ivory);
+      opacity: 0.9;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .brand-logo sup {
+      font-size: 10px;
+      letter-spacing: 0;
+      opacity: 0.65;
+      top: -0.4em;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      pointer-events: auto;
+    }
+
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--ivory-faint);
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ivory-muted);
+      cursor: pointer;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: all 0.3s ease;
+    }
+
+    .icon-btn:hover {
+      border-color: rgba(247, 244, 235, 0.4);
+      color: var(--ivory);
+      transform: scale(1.05);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .icon-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 1.6;
+    }
+
+    /* ==========================================================================
+       PAGE 1 — INTRO STATE & SEED & HOLD TO BLOOM
+       ========================================================================== */
+    #introScreen {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 12;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      pointer-events: auto;
+      transition: opacity 1.4s var(--ease-out-expo), transform 1.4s var(--ease-out-expo);
+    }
+
+    #introScreen.hidden {
+      opacity: 0;
+      transform: scale(0.96);
+      pointer-events: none;
+    }
+
+    .intro-header-text {
+      margin-bottom: 50px;
+      max-width: 540px;
+      transition: opacity 0.8s ease;
+    }
+
+    .intro-brand-title {
+      font-family: var(--font-serif);
+      font-size: clamp(26px, 4.2vw, 38px);
+      font-weight: 300;
+      letter-spacing: 0.44em;
+      text-transform: uppercase;
+      color: var(--ivory);
+      margin-bottom: 16px;
+      opacity: 0.95;
+    }
+
+    .intro-lead {
+      font-family: var(--font-serif);
+      font-size: clamp(18px, 2.9vw, 23px);
+      font-style: italic;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      color: var(--ivory);
+      opacity: 0.85;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .intro-sub {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 300;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--ivory-dim);
+    }
+
+    /* Seed Action Zone & Interactive Button */
+    .seed-action-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      cursor: pointer;
+    }
+
+    .seed-wrapper {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      transition: transform 0.35s var(--ease-spring);
+    }
+
+    .seed-wrapper:hover {
+      transform: scale(1.06);
+    }
+
+    .seed-wrapper:active {
+      transform: scale(0.96);
+    }
+
+    /* Progress Ring SVG */
+    .hold-ring-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+      pointer-events: none;
+      filter: drop-shadow(0 0 14px var(--gold-glow));
+    }
+
+    .hold-ring-bg {
+      fill: none;
+      stroke: rgba(247, 244, 235, 0.08);
+      stroke-width: 1.8;
+    }
+
+    .hold-ring-progress {
+      fill: none;
+      stroke: var(--gold-accent);
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      stroke-dasharray: 440; /* 2 * PI * 70 */
+      stroke-dashoffset: 440;
+      transition: stroke-dashoffset 0.04s linear;
+      will-change: stroke-dashoffset;
+    }
+
+    .seed-core {
+      width: 26px;
+      height: 38px;
+      border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%;
+      background: radial-gradient(circle at 35% 32%, #A8865E 0%, #5E442B 55%, #2B1C10 100%);
+      box-shadow: 0 0 24px rgba(229, 195, 132, 0.22), inset 0 2px 5px rgba(255, 238, 215, 0.4);
+      position: relative;
+      transition: transform 0.35s var(--ease-spring), filter 0.35s ease;
+      will-change: transform;
+    }
+
+    .seed-core::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3.5px;
+      height: 8px;
+      background: #7FA86A;
+      border-radius: 2px 2px 0 0;
+      opacity: 0.85;
+    }
+
+    .seed-halo {
+      position: absolute;
+      inset: -18px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(229, 195, 132, 0.22) 0%, transparent 70%);
+      opacity: 0.4;
+      animation: seedBreathe 4.2s ease-in-out infinite alternate;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    @keyframes seedBreathe {
+      0% { transform: scale(0.92); opacity: 0.25; }
+      100% { transform: scale(1.2); opacity: 0.65; }
+    }
+
+    /* Interaction feedback */
+    .holding .seed-core {
+      transform: scale(1.24);
+      filter: brightness(1.35) drop-shadow(0 0 20px rgba(229, 195, 132, 0.65));
+    }
+
+    .holding .seed-halo {
+      opacity: 0.95;
+      transform: scale(1.45);
+    }
+
+    /* Direct Bloom CTA Button */
+    .bloom-main-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 34px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      border-radius: 40px;
+      cursor: pointer;
+      box-shadow: 0 8px 26px rgba(229, 195, 132, 0.28), 0 0 0 1px rgba(229, 195, 132, 0.45);
+      animation: bloomBtnPulse 3.2s ease-in-out infinite alternate;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .bloom-main-btn:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 14px 38px rgba(229, 195, 132, 0.48), 0 0 0 1px rgba(229, 195, 132, 0.7);
+    }
+
+    .bloom-main-btn:active {
+      transform: translateY(0px) scale(0.98);
+    }
+
+    @keyframes bloomBtnPulse {
+      0% { box-shadow: 0 6px 20px rgba(229, 195, 132, 0.22), 0 0 0 1px rgba(229, 195, 132, 0.35); }
+      100% { box-shadow: 0 12px 34px rgba(229, 195, 132, 0.45), 0 0 0 1.5px rgba(229, 195, 132, 0.65); }
+    }
+
+    .hold-prompt {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--ivory);
+      opacity: 0.8;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: opacity 0.3s ease, letter-spacing 0.3s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .hold-prompt-dots {
+      display: inline-flex;
+      gap: 4px;
+    }
+
+    .hold-prompt-dots span {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--gold-accent);
+      opacity: 0.4;
+      animation: blinkDots 1.6s infinite ease-in-out;
+    }
+
+    .hold-prompt-dots span:nth-child(2) { animation-delay: 0.3s; }
+    .hold-prompt-dots span:nth-child(3) { animation-delay: 0.6s; }
+
+    @keyframes blinkDots {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .auto-bloom-status {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--ivory-dim);
+      opacity: 0.7;
+      transition: opacity 0.4s ease;
+      min-height: 16px;
+      user-select: none;
+    }
+
+    .auto-bloom-status b {
+      color: var(--gold-accent);
+      font-weight: 600;
+    }
+
+    .intro-discreet-cta {
+      position: absolute;
+      bottom: 38px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 300;
+      letter-spacing: 0.18em;
+      color: var(--ivory-dim);
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.3s ease;
+      border-bottom: 1px dotted var(--ivory-faint);
+      padding-bottom: 4px;
+    }
+
+    .intro-discreet-cta:hover {
+      color: var(--ivory);
+      border-bottom-color: var(--ivory-muted);
+    }
+
+    /* ==========================================================================
+       FINAL MESSAGE OVERLAY (Post-Bloom Reveal)
+       ========================================================================== */
+    #finalMessageOverlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 30px;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 2.4s var(--ease-organic), transform 2.4s var(--ease-out-expo);
+      background: radial-gradient(circle at 50% 48%, rgba(8, 9, 12, 0.68) 0%, rgba(8, 9, 12, 0.38) 48%, transparent 75%);
+    }
+
+    #finalMessageOverlay.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .final-badge {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.36em;
+      text-transform: uppercase;
+      color: var(--gold-accent);
+      margin-bottom: 22px;
+      opacity: 0.92;
+    }
+
+    .final-main-quote {
+      font-family: var(--font-serif);
+      font-size: clamp(32px, 6vw, 72px);
+      font-weight: 300;
+      line-height: 1.16;
+      letter-spacing: -0.01em;
+      color: var(--ivory);
+      max-width: 860px;
+      margin-bottom: 22px;
+      text-shadow: 0 4px 34px rgba(0, 0, 0, 0.75);
+    }
+
+    .final-sub-quote {
+      font-family: var(--font-serif);
+      font-size: clamp(19px, 3.2vw, 27px);
+      font-style: italic;
+      font-weight: 300;
+      color: var(--ivory-muted);
+      max-width: 620px;
+      line-height: 1.45;
+      margin-bottom: 18px;
+      text-shadow: 0 2px 22px rgba(0, 0, 0, 0.65);
+    }
+
+    /* Anything the visitor can rewrite in place */
+    .editable-field {
+      pointer-events: auto;
+      cursor: text;
+      outline: none;
+      border-radius: 4px;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .editable-field:hover,
+    .editable-field:focus {
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 0 0 1px rgba(229, 195, 132, 0.35);
+    }
+
+    .editable-field:empty::before {
+      content: attr(data-placeholder);
+      opacity: 0.45;
+      font-style: italic;
+    }
+
+    .editable-name {
+      color: var(--ivory);
+      letter-spacing: 0.36em;
+      padding: 2px 2px 2px 8px;
+    }
+
+    h2.final-main-quote.editable-field {
+      padding: 4px 14px;
+    }
+
+    .final-edit-hint {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--ivory-dim);
+      margin-top: 26px;
+      opacity: 0.55;
+      transition: opacity 0.8s ease;
+    }
+
+    .final-edit-hint.dismissed {
+      opacity: 0;
+    }
+
+    .final-author {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--ivory-dim);
+      margin-top: 10px;
+    }
+
+    /* Minimalist Action Bar at Bottom */
+    .final-actions-bar {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 0 20px;
+      z-index: 16;
+      opacity: 0;
+      transform: translateY(15px);
+      transition: opacity 1.8s var(--ease-organic) 1.2s, transform 1.8s var(--ease-out-expo) 1.2s;
+      pointer-events: none;
+    }
+
+    .final-actions-bar.revealed {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .pill-btn {
+      padding: 13px 24px;
+      border-radius: 40px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      transition: all 0.35s var(--ease-out-expo);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .pill-btn-primary {
+      background: var(--ivory);
+      color: var(--night-black);
+      border: 1px solid var(--ivory);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+    }
+
+    .pill-btn-primary:hover {
+      background: #FFFFFF;
+      transform: translateY(-2px);
+      box-shadow: 0 14px 34px rgba(247, 244, 235, 0.28);
+    }
+
+    .pill-btn-gold {
+      background: linear-gradient(135deg, #E5C384 0%, #C99E54 100%);
+      color: #0E0E10;
+      border: 1px solid #E5C384;
+      font-weight: 500;
+      box-shadow: 0 8px 26px rgba(229, 195, 132, 0.35);
+    }
+
+    .pill-btn-gold:hover {
+      background: linear-gradient(135deg, #F3D9A2 0%, #DCB065 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 14px 34px rgba(229, 195, 132, 0.45);
+    }
+
+    .pill-btn-secondary {
+      background: rgba(22, 23, 28, 0.65);
+      color: var(--ivory-muted);
+      border: 1px solid rgba(247, 244, 235, 0.16);
+    }
+
+    .pill-btn-secondary:hover {
+      background: rgba(30, 32, 40, 0.88);
+      color: var(--ivory);
+      border-color: rgba(247, 244, 235, 0.38);
+      transform: translateY(-2px);
+    }
+
+    /* ==========================================================================
+       PERSONALIZED MODAL (GIFTING & CREATION FLOW)
+       ========================================================================== */
+    #giftModalOverlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+      background: rgba(6, 7, 9, 0.88);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s var(--ease-out-expo);
+    }
+
+    #giftModalOverlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 590px;
+      background: linear-gradient(165deg, rgba(28, 30, 36, 0.92) 0%, rgba(16, 17, 20, 0.96) 100%);
+      border: 1px solid rgba(247, 244, 235, 0.12);
+      border-radius: 28px;
+      padding: 44px 40px;
+      box-shadow: 0 32px 85px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      transform: scale(0.95) translateY(15px);
+      transition: transform 0.5s var(--ease-out-expo);
+      max-height: 90vh;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+
+    .modal-box::-webkit-scrollbar {
+      display: none;
+    }
+
+    #giftModalOverlay.active .modal-box {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 28px;
+    }
+
+    .modal-title {
+      font-family: var(--font-serif);
+      font-size: 29px;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      color: var(--ivory);
+      line-height: 1.25;
+    }
+
+    .modal-sub {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--ivory-dim);
+      margin-top: 6px;
+      letter-spacing: 0.04em;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--ivory-dim);
+      font-size: 26px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+      transition: color 0.25s ease;
+    }
+
+    .close-btn:hover {
+      color: var(--ivory);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ivory-muted);
+      margin-bottom: 10px;
+    }
+
+    .text-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(247, 244, 235, 0.14);
+      border-radius: 14px;
+      padding: 14px 18px;
+      color: var(--ivory);
+      font-family: var(--font-serif);
+      font-size: 17px;
+      outline: none;
+      transition: border-color 0.3s ease, background 0.3s ease;
+    }
+
+    .text-input:focus {
+      border-color: var(--gold-accent);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    /* Intention & Meaning Selector Grid */
+    .intentions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+      margin-bottom: 18px;
+    }
+
+    .intention-chip {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(247, 244, 235, 0.1);
+      border-radius: 13px;
+      padding: 11px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.25s ease;
+    }
+
+    .intention-chip:hover {
+      border-color: rgba(247, 244, 235, 0.32);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .intention-chip.selected {
+      border-color: var(--gold-accent);
+      background: rgba(229, 195, 132, 0.12);
+    }
+
+    .chip-name {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ivory);
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .chip-flowers {
+      font-family: var(--font-serif);
+      font-size: 12px;
+      font-style: italic;
+      color: var(--ivory-dim);
+      display: block;
+    }
+
+    /* Preset Message Chips */
+    .preset-chips-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+    }
+
+    .preset-chips-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .preset-chip {
+      white-space: nowrap;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(247, 244, 235, 0.1);
+      border-radius: 20px;
+      padding: 7px 15px;
+      font-family: var(--font-serif);
+      font-size: 14px;
+      color: var(--ivory-muted);
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .preset-chip:hover {
+      border-color: rgba(247, 244, 235, 0.28);
+      color: var(--ivory);
+    }
+
+    .preset-chip.active {
+      border-color: var(--gold-accent);
+      color: var(--gold-accent);
+      background: rgba(229, 195, 132, 0.1);
+    }
+
+    .generate-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 16px;
+      background: var(--ivory);
+      color: var(--night-black);
+      border: none;
+      border-radius: 16px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .generate-btn:hover {
+      background: #FFFFFF;
+      transform: translateY(-2px);
+      box-shadow: 0 15px 35px rgba(247, 244, 235, 0.3);
+    }
+
+    /* Generated Share Link Box */
+    #shareResultBox {
+      display: none;
+      margin-top: 24px;
+      padding: 22px;
+      border-radius: 18px;
+      background: rgba(229, 195, 132, 0.08);
+      border: 1px solid rgba(229, 195, 132, 0.26);
+    }
+
+    #shareResultBox.active {
+      display: block;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .share-link-input-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .share-link-input {
+      flex: 1;
+      background: rgba(10, 12, 16, 0.85);
+      border: 1px solid rgba(247, 244, 235, 0.16);
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: var(--ivory-muted);
+      outline: none;
+    }
+
+    .copy-link-btn {
+      padding: 11px 20px;
+      background: var(--gold-accent);
+      color: var(--night-black);
+      border: none;
+      border-radius: 12px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .copy-link-btn:hover {
+      background: #F3D9A2;
+    }
+
+    /* ==========================================================================
+       KEEPSAKE CARD MODAL (VIRAL / HIGH-FASHION SHARING)
+       ========================================================================== */
+    #keepsakeModalOverlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 60;
+      background: rgba(5, 6, 8, 0.92);
+      backdrop-filter: blur(36px);
+      -webkit-backdrop-filter: blur(36px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s var(--ease-out-expo);
+    }
+
+    #keepsakeModalOverlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .keepsake-modal-box {
+      width: 100%;
+      max-width: 480px;
+      background: linear-gradient(165deg, rgba(24, 26, 32, 0.95) 0%, rgba(14, 15, 18, 0.98) 100%);
+      border: 1px solid rgba(229, 195, 132, 0.25);
+      border-radius: 28px;
+      padding: 32px 28px;
+      box-shadow: 0 35px 90px rgba(0, 0, 0, 0.85);
+      text-align: center;
+      transform: scale(0.95) translateY(15px);
+      transition: transform 0.5s var(--ease-out-expo);
+      max-height: 92vh;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+
+    #keepsakeModalOverlay.active .keepsake-modal-box {
+      transform: scale(1) translateY(0);
+    }
+
+    .card-preview-wrapper {
+      margin: 18px 0 24px 0;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(229, 195, 132, 0.2);
+    }
+
+    #keepsakeCardImg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .card-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    /* Offscreen Card Canvas for high-res rendering */
+    #hiddenCardCanvas {
+      display: none;
+    }
+
+    /* ==========================================================================
+       TOAST NOTIFICATION
+       ========================================================================== */
+    #toastNotification {
+      position: absolute;
+      top: 36px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      z-index: 100;
+      background: rgba(14, 15, 18, 0.94);
+      border: 1px solid rgba(247, 244, 235, 0.18);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 11px 24px;
+      border-radius: 30px;
+      color: var(--ivory);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.4s var(--ease-out-expo);
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
+    }
+
+    #toastNotification.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ==========================================================================
+       RESPONSIVE REFINEMENTS
+       ========================================================================== */
+    @media (max-width: 640px) {
+      header {
+        padding: 24px 22px;
+      }
+      .brand-logo {
+        font-size: 17px;
+      }
+      .modal-box {
+        padding: 30px 24px;
+        border-radius: 24px;
+      }
+      .intentions-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .final-actions-bar {
+        bottom: 24px;
+        gap: 8px;
+      }
+      .pill-btn {
+        padding: 11px 18px;
+        font-size: 11px;
+      }
+      .final-main-quote {
+        font-size: 34px;
+      }
+      .card-actions-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- DYNAMIC LIGHTING ATMOSPHERE & CREPUSCULAR BEAMS -->
+  <div id="atmosphere"></div>
+  <div id="sunGlow"></div>
+  <div id="lightBeams"></div>
+  <div class="grain-overlay"></div>
+  <div class="vignette"></div>
+
+  <!-- PARTICLE CANVAS (Pollen, dust, glowing embers, falling petals) -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- OFFSCREEN CARD CANVAS (For generating high-res Keepsake Gift Cards) -->
+  <canvas id="hiddenCardCanvas" width="1080" height="1350"></canvas>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand-logo">
+      BLOOM<sup>°</sup>
+    </div>
+    <div class="nav-actions">
+      <!-- Audio Ambience Toggle -->
+      <button class="icon-btn" id="soundToggle" aria-label="Toggle ambient nature sound" title="Ambient Sound">
+        <!-- Sound Muted SVG -->
+        <svg id="soundMutedIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+        <!-- Sound Active SVG -->
+        <svg id="soundActiveIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: none;">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+      </button>
+
+      <!-- Plant a Bloom for someone CTA -->
+      <button class="icon-btn" id="openGiftModalBtn" aria-label="Plant a bloom for someone" title="Plant for Someone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- BOTANICAL SVG GARDEN SCENE -->
+  <main id="sceneContainer">
+    <svg id="gardenSvg" viewBox="0 0 1200 1000" preserveAspectRatio="none">
+      <defs>
+        <!-- STEM GRADIENTS -->
+        <linearGradient id="gradStemMain" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stop-color="#121C11" />
+          <stop offset="35%" stop-color="#22361F" />
+          <stop offset="75%" stop-color="#3D5C35" />
+          <stop offset="100%" stop-color="#648A57" />
+        </linearGradient>
+
+        <linearGradient id="gradStemSecondary" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stop-color="#0E170D" />
+          <stop offset="60%" stop-color="#283C25" />
+          <stop offset="100%" stop-color="#4F7046" />
+        </linearGradient>
+
+        <!-- LEAF GRADIENTS & VEINS -->
+        <linearGradient id="gradLeaf" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#557C4E" />
+          <stop offset="45%" stop-color="#355230" />
+          <stop offset="100%" stop-color="#162713" />
+        </linearGradient>
+
+        <linearGradient id="gradLeafVein" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="rgba(175, 218, 166, 0.45)" />
+          <stop offset="100%" stop-color="rgba(175, 218, 166, 0.05)" />
+        </linearGradient>
+
+        <!-- ROSE GRADIENTS (English David Austin multi-tiered styling) -->
+        <radialGradient id="gradRosePetalOuter" cx="45%" cy="35%" r="70%">
+          <stop offset="0%" stop-color="#FF5475" />
+          <stop offset="35%" stop-color="#D91642" />
+          <stop offset="75%" stop-color="#7D0920" />
+          <stop offset="100%" stop-color="#34020C" />
+        </radialGradient>
+
+        <radialGradient id="gradRosePetalMid" cx="48%" cy="32%" r="70%">
+          <stop offset="0%" stop-color="#FF7592" />
+          <stop offset="35%" stop-color="#E8204E" />
+          <stop offset="80%" stop-color="#910D2C" />
+          <stop offset="100%" stop-color="#440414" />
+        </radialGradient>
+
+        <radialGradient id="gradRosePetalInner" cx="50%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#FFA8BC" />
+          <stop offset="40%" stop-color="#FA2D63" />
+          <stop offset="85%" stop-color="#A81035" />
+          <stop offset="100%" stop-color="#4F0519" />
+        </radialGradient>
+
+        <!-- PEONY GRADIENTS (Lush porcelain and antique rose ruffles) -->
+        <radialGradient id="gradPeonyPetalOuter" cx="45%" cy="35%" r="75%">
+          <stop offset="0%" stop-color="#FFF5F8" />
+          <stop offset="30%" stop-color="#FBBED0" />
+          <stop offset="70%" stop-color="#E27396" />
+          <stop offset="100%" stop-color="#8E2A49" />
+        </radialGradient>
+
+        <radialGradient id="gradPeonyPetalInner" cx="50%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#FFFFFF" />
+          <stop offset="35%" stop-color="#FDD7E4" />
+          <stop offset="80%" stop-color="#EA8CA8" />
+          <stop offset="100%" stop-color="#A8395B" />
+        </radialGradient>
+
+        <!-- SUNFLOWER GRADIENTS (Golden amber & rich cocoa Fibonacci disc) -->
+        <radialGradient id="gradSunflowerDisc" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#140B04" />
+          <stop offset="45%" stop-color="#2D1709" />
+          <stop offset="78%" stop-color="#6E3812" />
+          <stop offset="92%" stop-color="#C77D20" />
+          <stop offset="100%" stop-color="#48230B" />
+        </radialGradient>
+
+        <linearGradient id="gradSunflowerPetalOuter" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stop-color="#C75404" />
+          <stop offset="30%" stop-color="#F29E02" />
+          <stop offset="80%" stop-color="#FFD13B" />
+          <stop offset="100%" stop-color="#FFF494" />
+        </linearGradient>
+
+        <linearGradient id="gradSunflowerPetalInner" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stop-color="#DF6D09" />
+          <stop offset="40%" stop-color="#FFB703" />
+          <stop offset="85%" stop-color="#FFE066" />
+          <stop offset="100%" stop-color="#FFFFB8" />
+        </linearGradient>
+
+        <!-- TULIP GRADIENTS (Silky goblet petals in coral and apricot) -->
+        <linearGradient id="gradTulipOuter" x1="15%" y1="100%" x2="85%" y2="0%">
+          <stop offset="0%" stop-color="#C92A52" />
+          <stop offset="30%" stop-color="#FF597B" />
+          <stop offset="70%" stop-color="#FFA07A" />
+          <stop offset="100%" stop-color="#FFF3E8" />
+        </linearGradient>
+
+        <linearGradient id="gradTulipInner" x1="20%" y1="100%" x2="80%" y2="0%">
+          <stop offset="0%" stop-color="#B21E42" />
+          <stop offset="40%" stop-color="#F24E71" />
+          <stop offset="80%" stop-color="#FF8A65" />
+          <stop offset="100%" stop-color="#FFECD9" />
+        </linearGradient>
+
+        <!-- DAISY GRADIENTS (Porcelain white & golden dome) -->
+        <linearGradient id="gradDaisyPetal" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stop-color="#BACAD7" />
+          <stop offset="25%" stop-color="#E5ECF2" />
+          <stop offset="80%" stop-color="#FFFFFF" />
+          <stop offset="100%" stop-color="#FFFFFF" />
+        </linearGradient>
+
+        <radialGradient id="gradDaisyDisc" cx="45%" cy="40%" r="55%">
+          <stop offset="0%" stop-color="#FFE680" />
+          <stop offset="55%" stop-color="#F5A742" />
+          <stop offset="100%" stop-color="#BA6215" />
+        </radialGradient>
+
+        <!-- POPPY GRADIENTS (Translucent scarlet with dark heart) -->
+        <radialGradient id="gradPoppyPetal" cx="50%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#FF6B6B" />
+          <stop offset="40%" stop-color="#E62626" />
+          <stop offset="80%" stop-color="#991010" />
+          <stop offset="100%" stop-color="#480505" />
+        </radialGradient>
+
+        <!-- WILDFLOWER GRADIENTS (Periwinkle & cornflower blue) -->
+        <linearGradient id="gradWildflowerPetal" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stop-color="#34437A" />
+          <stop offset="45%" stop-color="#5E73BD" />
+          <stop offset="85%" stop-color="#A6B6F7" />
+          <stop offset="100%" stop-color="#E1E7FF" />
+        </linearGradient>
+
+        <!-- BABY'S BREATH (Gypsophila) & CLOVER -->
+        <radialGradient id="gradGypsophila" cx="45%" cy="40%" r="60%">
+          <stop offset="0%" stop-color="#FFFFFF" />
+          <stop offset="60%" stop-color="#F0F5FA" />
+          <stop offset="100%" stop-color="#C5D3E0" />
+        </radialGradient>
+
+        <!-- DEWDROP GLISTEN FILTER -->
+        <radialGradient id="gradDewdrop" cx="35%" cy="30%" r="65%">
+          <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9" />
+          <stop offset="40%" stop-color="rgba(255,255,255,0.4)" />
+          <stop offset="85%" stop-color="rgba(0,0,0,0.25)" />
+          <stop offset="100%" stop-color="rgba(0,0,0,0.5)" />
+        </radialGradient>
+      </defs>
+
+      <!-- SVG MULTI-TIER DEPTH LAYERS -->
+      <!-- LAYER 1: Distant Background Silhouette & Climbing Canopy (Soft Blur) -->
+      <g id="layerBackground" class="depth-background"></g>
+
+      <!-- LAYER 2: Midground Secondary Blooms & Air Fillers (Subtle Blur) -->
+      <g id="layerMidBack" class="depth-midground-back"></g>
+
+      <!-- LAYER 3: Hero Stems & Majestic Focal Blooms (Crisp & High Fidelity) -->
+      <g id="layerMidground" class="depth-midground"></g>
+
+      <!-- LAYER 4: Foreground Overlapping Foliage & Close-up Framing Blossoms (Soft DOF) -->
+      <g id="layerForeground" class="depth-foreground"></g>
+    </svg>
+  </main>
+
+  <!-- POETIC MEANING TOOLTIP ON FLOWER INTERACTION -->
+  <div id="poeticTag">
+    <span class="meaning-name">Rose</span>
+    <span class="meaning-desc">Love &amp; Devotion</span>
+  </div>
+
+  <!-- EASTER EGG TOAST BANNER -->
+  <div id="easterEggToast">Everything blooms differently.</div>
+
+  <!-- PAGE 1: INTRO SCREEN -->
+  <div id="introScreen">
+    <div class="intro-header-text">
+      <h1 class="intro-brand-title">BLOOM</h1>
+      <p id="introHeadline" class="intro-lead">Something beautiful is about to bloom.</p>
+      <p id="introSubline" class="intro-sub">Some things just need time.</p>
+    </div>
+
+    <!-- SEED & INTERACTIVE BUTTON ZONE -->
+    <div class="seed-action-zone" id="seedActionZone">
+      <div class="seed-wrapper" id="seedHoldButton" role="button" aria-label="Bloom the garden" tabindex="0">
+        <svg class="hold-ring-svg" viewBox="0 0 150 150">
+          <circle class="hold-ring-bg" cx="75" cy="75" r="70"></circle>
+          <circle id="holdProgressCircle" class="hold-ring-progress" cx="75" cy="75" r="70"></circle>
+        </svg>
+        <div class="seed-halo"></div>
+        <div class="seed-core" id="seedVisualCore"></div>
+      </div>
+
+      <!-- PROMINENT DIRECT BLOOM BUTTON -->
+      <button class="pill-btn pill-btn-gold bloom-main-btn" id="clickToBloomBtn" aria-label="Click to Bloom">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+        </svg>
+        <span id="bloomBtnText">Click to Bloom</span>
+      </button>
+
+      <div class="hold-prompt" id="holdPromptLabel">
+        <span id="holdPromptText">Click or hold to bloom</span>
+        <div class="hold-prompt-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- AUTO-BLOOM COUNTDOWN (Discreet) -->
+      <div class="auto-bloom-status" id="autoBloomStatus">
+        <span>Blooming in <b id="autoBloomCountdown">6</b>s or click above</span>
+      </div>
+    </div>
+
+    <a class="intro-discreet-cta" id="introPlantForSomeoneLink">Plant a bloom for someone</a>
+  </div>
+
+  <!-- FINAL MESSAGE OVERLAY (Revealed 1.6s after garden blooms) -->
+  <div id="finalMessageOverlay">
+    <div id="finalBadge" class="final-badge">
+      <span>Planted for</span>
+      <span id="finalNameEdit" class="editable-field editable-name" contenteditable="true"
+            spellcheck="false" role="textbox" tabindex="0"
+            aria-label="Who this bloom is for" data-placeholder="someone"></span>
+    </div>
+    <h2 id="finalMainQuote" class="final-main-quote editable-field" contenteditable="true"
+        spellcheck="false" role="textbox" tabindex="0"
+        aria-label="Your message" data-placeholder="Write something beautiful"></h2>
+    <p id="finalSubQuote" class="final-sub-quote">Beautiful things take time.</p>
+    <div id="finalAuthor" class="final-author" style="display: none;">— Alex</div>
+    <div id="finalEditHint" class="final-edit-hint">Tap the name or the words to make them yours</div>
+  </div>
+
+  <!-- FINAL ACTIONS BAR (With Save Keepsake Card & Share Gift) -->
+  <div class="final-actions-bar" id="finalActionsBar">
+    <button class="pill-btn pill-btn-gold" id="finalSaveCardBtn" title="Save or Share a Keepsake Card">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <polyline points="21 15 16 10 5 21"></polyline>
+      </svg>
+      <span>Save Keepsake Card</span>
+    </button>
+    <button class="pill-btn pill-btn-primary" id="finalSendBloomBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
+      </svg>
+      <span>Plant a Bloom</span>
+    </button>
+    <button class="pill-btn pill-btn-secondary" id="finalShareBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="18" cy="5" r="3"></circle>
+        <circle cx="6" cy="12" r="3"></circle>
+        <circle cx="18" cy="19" r="3"></circle>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+      </svg>
+      <span>Share Garden</span>
+    </button>
+    <button class="pill-btn pill-btn-secondary" id="finalRebloomBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+      </svg>
+      <span>Bloom Again</span>
+    </button>
+  </div>
+
+  <!-- KEEPSAKE GIFT CARD MODAL (Direct Download & Viral Share) -->
+  <div id="keepsakeModalOverlay" role="dialog" aria-modal="true">
+    <div class="keepsake-modal-box">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Botanical Keepsake</h3>
+          <p class="modal-sub">Flowers that never fade — ready to save and share.</p>
+        </div>
+        <button class="close-btn" id="closeKeepsakeModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <!-- Rendered Image Preview -->
+      <div class="card-preview-wrapper">
+        <img id="keepsakeCardImg" alt="Botanical Keepsake Card Preview">
+      </div>
+
+      <!-- Action Buttons for Keepsake Card -->
+      <div class="card-actions-grid">
+        <button class="pill-btn pill-btn-gold" id="downloadCardBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Save Image (PNG)</span>
+        </button>
+        <button class="pill-btn pill-btn-primary" id="shareWhatsAppBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+          </svg>
+          <span>Share on WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GIFT MODAL OVERLAY (Plant a Bloom Creator) -->
+  <div id="giftModalOverlay" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Plant a Bloom</h3>
+          <p class="modal-sub">Send someone flowers that never fade.</p>
+        </div>
+        <button class="close-btn" id="closeGiftModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <form id="plantBloomForm">
+        <!-- Recipient Name -->
+        <div class="form-group">
+          <label class="form-label" for="recipientInput">Who is this bloom for?</label>
+          <input type="text" id="recipientInput" class="text-input" placeholder="e.g. Emma" required maxlength="32">
+        </div>
+
+        <!-- Garden Intention Selection -->
+        <div class="form-group">
+          <label class="form-label">Garden Intention</label>
+          <div class="intentions-grid">
+            <div class="intention-chip selected" data-type="love">
+              <span class="chip-name">Love</span>
+              <span class="chip-flowers">English Roses &amp; Peonies</span>
+            </div>
+            <div class="intention-chip" data-type="friendship">
+              <span class="chip-name">Friendship</span>
+              <span class="chip-flowers">Sunflowers &amp; Daisies</span>
+            </div>
+            <div class="intention-chip" data-type="new-beginning">
+              <span class="chip-name">New Beginning</span>
+              <span class="chip-flowers">Tulips &amp; White Buds</span>
+            </div>
+            <div class="intention-chip" data-type="thinking-of-you">
+              <span class="chip-name">Thinking of You</span>
+              <span class="chip-flowers">Mixed Wildflowers</span>
+            </div>
+            <div class="intention-chip" data-type="birthday">
+              <span class="chip-name">Birthday</span>
+              <span class="chip-flowers">Vibrant Botanical Tapestry</span>
+            </div>
+            <div class="intention-chip" data-type="miss-you">
+              <span class="chip-name">Miss You</span>
+              <span class="chip-flowers">Twilight Bluebells</span>
+            </div>
+            <div class="intention-chip" data-type="keep-going">
+              <span class="chip-name">Keep Going</span>
+              <span class="chip-flowers">Resilient Wild Poppies</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message Presets & Custom -->
+        <div class="form-group">
+          <label class="form-label">What would you like them to remember?</label>
+          <div class="preset-chips-scroll">
+            <span class="preset-chip active" data-msg="You are loved">You are loved</span>
+            <span class="preset-chip" data-msg="I'm proud of you">I'm proud of you</span>
+            <span class="preset-chip" data-msg="Thinking of you">Thinking of you</span>
+            <span class="preset-chip" data-msg="Keep going">Keep going</span>
+            <span class="preset-chip" data-msg="Happy Birthday">Happy Birthday</span>
+            <span class="preset-chip" data-msg="I miss you">I miss you</span>
+            <span class="preset-chip" data-msg="New beginnings">New beginnings</span>
+          </div>
+          <input type="text" id="customMessageInput" class="text-input" placeholder="Or write your own message..." value="You are loved" maxlength="90">
+        </div>
+
+        <!-- Sender Name -->
+        <div class="form-group">
+          <label class="form-label" for="senderInput">From (Optional)</label>
+          <input type="text" id="senderInput" class="text-input" placeholder="e.g. Alex" maxlength="32">
+        </div>
+
+        <button type="submit" class="generate-btn">Generate Garden Link</button>
+      </form>
+
+      <!-- Generated Link Result -->
+      <div id="shareResultBox">
+        <span class="form-label" style="color: var(--gold-accent);">Your shareable bloom link is ready</span>
+        <div class="share-link-input-group">
+          <input type="text" id="generatedShareUrl" class="share-link-input" readonly>
+          <button class="copy-link-btn" id="copyShareUrlBtn">Copy Link</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastNotification">Link copied to clipboard</div>
+
+  <!-- ==========================================================================
+       VANILLA JAVASCRIPT: BOTANICAL ENGINE & INTERACTIONS
+       ========================================================================== -->
+  <script>
+    (function() {
+      'use strict';
+
+      /* ==========================================================================
+         STATE & CONFIGURATION
+         ========================================================================== */
+      const STATE = {
+        phase: 'intro', // 'intro' | 'holding' | 'growing' | 'bloomed'
+        holdProgress: 0,
+        holdDurationMs: 2200,
+        lastFrameTime: performance.now(),
+        isHolding: false,
+        soundEnabled: false,
+        activeType: 'love',
+        isPersonalized: false,
+        personalizedData: {
+          to: '',
+          from: '',
+          message: '',
+          type: 'love'
+        },
+        viewW: 1200,
+        viewH: 1000,
+        flowers: [],
+        easterEggFlowerCount: 0,
+        mouse: { x: window.innerWidth / 2, y: window.innerHeight / 2, targetX: window.innerWidth / 2, targetY: window.innerHeight / 2 }
+      };
+
+      const FLOWER_MEANINGS = {
+        rose: { name: 'English Rose', desc: 'Love, Passion & Devotion' },
+        peony: { name: 'French Peony', desc: 'Good Fortune, Prosperity & Grace' },
+        sunflower: { name: 'Sunflower', desc: 'Warmth, Loyalty & Adoration' },
+        daisy: { name: 'Field Daisy', desc: 'Hope, Innocence & Purity' },
+        tulip: { name: 'Royal Tulip', desc: 'New Beginnings & Rebirth' },
+        poppy: { name: 'Wild Poppy', desc: 'Peace, Resilience & Remembrance' },
+        wildflower: { name: 'Bluebell', desc: 'Enduring Love & Gratitude' },
+        gypsophila: { name: "Baby's Breath", desc: 'Everlasting Affection' }
+      };
+
+      /* ==========================================================================
+         DOM ELEMENTS
+         ========================================================================== */
+      const el = {
+        atmosphere: document.getElementById('atmosphere'),
+        sunGlow: document.getElementById('sunGlow'),
+        lightBeams: document.getElementById('lightBeams'),
+        particleCanvas: document.getElementById('particleCanvas'),
+        hiddenCardCanvas: document.getElementById('hiddenCardCanvas'),
+        gardenSvg: document.getElementById('gardenSvg'),
+        layerBackground: document.getElementById('layerBackground'),
+        layerMidBack: document.getElementById('layerMidBack'),
+        layerMidground: document.getElementById('layerMidground'),
+        layerForeground: document.getElementById('layerForeground'),
+        introScreen: document.getElementById('introScreen'),
+        seedActionZone: document.getElementById('seedActionZone'),
+        seedHoldButton: document.getElementById('seedHoldButton'),
+        clickToBloomBtn: document.getElementById('clickToBloomBtn'),
+        bloomBtnText: document.getElementById('bloomBtnText'),
+        holdProgressCircle: document.getElementById('holdProgressCircle'),
+        seedVisualCore: document.getElementById('seedVisualCore'),
+        holdPromptLabel: document.getElementById('holdPromptLabel'),
+        holdPromptText: document.getElementById('holdPromptText'),
+        autoBloomStatus: document.getElementById('autoBloomStatus'),
+        autoBloomCountdown: document.getElementById('autoBloomCountdown'),
+        introHeadline: document.getElementById('introHeadline'),
+        introSubline: document.getElementById('introSubline'),
+        introPlantForSomeoneLink: document.getElementById('introPlantForSomeoneLink'),
+        finalMessageOverlay: document.getElementById('finalMessageOverlay'),
+        finalBadge: document.getElementById('finalBadge'),
+        finalMainQuote: document.getElementById('finalMainQuote'),
+        finalSubQuote: document.getElementById('finalSubQuote'),
+        finalAuthor: document.getElementById('finalAuthor'),
+        finalNameEdit: document.getElementById('finalNameEdit'),
+        finalEditHint: document.getElementById('finalEditHint'),
+        finalActionsBar: document.getElementById('finalActionsBar'),
+        finalSaveCardBtn: document.getElementById('finalSaveCardBtn'),
+        finalSendBloomBtn: document.getElementById('finalSendBloomBtn'),
+        finalShareBtn: document.getElementById('finalShareBtn'),
+        finalRebloomBtn: document.getElementById('finalRebloomBtn'),
+        giftModalOverlay: document.getElementById('giftModalOverlay'),
+        openGiftModalBtn: document.getElementById('openGiftModalBtn'),
+        closeGiftModalBtn: document.getElementById('closeGiftModalBtn'),
+        plantBloomForm: document.getElementById('plantBloomForm'),
+        recipientInput: document.getElementById('recipientInput'),
+        customMessageInput: document.getElementById('customMessageInput'),
+        senderInput: document.getElementById('senderInput'),
+        shareResultBox: document.getElementById('shareResultBox'),
+        generatedShareUrl: document.getElementById('generatedShareUrl'),
+        copyShareUrlBtn: document.getElementById('copyShareUrlBtn'),
+        keepsakeModalOverlay: document.getElementById('keepsakeModalOverlay'),
+        keepsakeCardImg: document.getElementById('keepsakeCardImg'),
+        closeKeepsakeModalBtn: document.getElementById('closeKeepsakeModalBtn'),
+        downloadCardBtn: document.getElementById('downloadCardBtn'),
+        shareWhatsAppBtn: document.getElementById('shareWhatsAppBtn'),
+        soundToggle: document.getElementById('soundToggle'),
+        soundMutedIcon: document.getElementById('soundMutedIcon'),
+        soundActiveIcon: document.getElementById('soundActiveIcon'),
+        poeticTag: document.getElementById('poeticTag'),
+        easterEggToast: document.getElementById('easterEggToast'),
+        toastNotification: document.getElementById('toastNotification')
+      };
+
+      /* ==========================================================================
+         RESPONSIVE VIEWPORT COORDINATE ENGINE
+         ========================================================================== */
+      let lastWindowWidth = window.innerWidth;
+      function updateViewBox() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        STATE.viewW = 1200;
+        STATE.viewH = Math.max(Math.round(1200 * (h / w)), 760);
+        el.gardenSvg.setAttribute('viewBox', `0 0 ${STATE.viewW} ${STATE.viewH}`);
+      }
+      updateViewBox();
+
+      window.addEventListener('resize', () => {
+        if (Math.abs(window.innerWidth - lastWindowWidth) > 40) {
+          lastWindowWidth = window.innerWidth;
+          updateViewBox();
+          if (STATE.phase !== 'growing') {
+            garden.buildGarden(STATE.activeType);
+            if (STATE.phase === 'bloomed') {
+              garden.instantFullBloom();
+            }
+          }
+        }
+      });
+
+      /* ==========================================================================
+         WEB AUDIO API PROCEDURAL AMBIENCE
+         ========================================================================== */
+      class SoundEngine {
+        constructor() {
+          this.ctx = null;
+          this.masterGain = null;
+          this.windGain = null;
+          this.isInitialized = false;
+        }
+
+        init() {
+          if (this.isInitialized) return;
+          try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioContext();
+            this.masterGain = this.ctx.createGain();
+            this.masterGain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+            this.masterGain.connect(this.ctx.destination);
+
+            this.setupProceduralWind();
+            this.isInitialized = true;
+          } catch (e) {
+            console.warn('Web Audio could not be initialized:', e);
+          }
+        }
+
+        setupProceduralWind() {
+          if (!this.ctx) return;
+          const bufferSize = this.ctx.sampleRate * 2;
+          const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          let b0 = 0, b1 = 0, b2 = 0;
+          for (let i = 0; i < bufferSize; i++) {
+            const white = Math.random() * 2 - 1;
+            b0 = 0.99 * b0 + white * 0.05;
+            b1 = 0.96 * b1 + white * 0.11;
+            b2 = 0.86 * b2 + white * 0.25;
+            output[i] = (b0 + b1 + b2) * 0.35;
+          }
+
+          const whiteNoise = this.ctx.createBufferSource();
+          whiteNoise.buffer = noiseBuffer;
+          whiteNoise.loop = true;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(260, this.ctx.currentTime);
+
+          const lfo = this.ctx.createOscillator();
+          lfo.frequency.setValueAtTime(0.12, this.ctx.currentTime);
+          const lfoGain = this.ctx.createGain();
+          lfoGain.gain.setValueAtTime(140, this.ctx.currentTime);
+          lfo.connect(lfoGain);
+          lfoGain.connect(filter.frequency);
+
+          this.windGain = this.ctx.createGain();
+          this.windGain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+
+          whiteNoise.connect(filter);
+          filter.connect(this.windGain);
+          this.windGain.connect(this.masterGain);
+
+          whiteNoise.start();
+          lfo.start();
+        }
+
+        async enable() {
+          this.init();
+          if (!this.ctx) return;
+          if (this.ctx.state === 'suspended') {
+            await this.ctx.resume();
+          }
+          this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+          this.masterGain.gain.linearRampToValueAtTime(0.75, this.ctx.currentTime + 1.2);
+        }
+
+        disable() {
+          if (!this.ctx) return;
+          this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+          this.masterGain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
+        }
+
+        playBloomChime(freq = 528) {
+          if (!STATE.soundEnabled || !this.ctx) return;
+          try {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+            gain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.12, this.ctx.currentTime + 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 2.8);
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+
+            osc.start();
+            osc.stop(this.ctx.currentTime + 2.8);
+          } catch(e) {}
+        }
+
+        playSunriseSwell() {
+          if (!STATE.soundEnabled || !this.ctx) return;
+          const chord = [261.63, 329.63, 392.00, 493.88, 659.25];
+          chord.forEach((freq, idx) => {
+            setTimeout(() => {
+              if (!this.ctx) return;
+              try {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+                gain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.05, this.ctx.currentTime + 2.0);
+                gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 7.5);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 7.5);
+              } catch(e) {}
+            }, idx * 150);
+          });
+        }
+      }
+
+      const audio = new SoundEngine();
+
+      /* ==========================================================================
+         PARTICLE SYSTEM (Floating Pollen, Glowing Dust, Falling Petals)
+         ========================================================================== */
+      class ParticleSystem {
+        constructor(canvas) {
+          this.canvas = canvas;
+          this.ctx = canvas.getContext('2d');
+          this.particles = [];
+          this.fallingPetals = [];
+          this.width = 0;
+          this.height = 0;
+          this.resize();
+          window.addEventListener('resize', () => this.resize());
+        }
+
+        resize() {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          this.width = window.innerWidth;
+          this.height = window.innerHeight;
+          this.canvas.width = this.width * dpr;
+          this.canvas.height = this.height * dpr;
+          this.ctx.scale(dpr, dpr);
+        }
+
+        initAmbientPollen() {
+          const count = Math.min(Math.floor(this.width / 18), 85);
+          this.particles = [];
+          for (let i = 0; i < count; i++) {
+            this.particles.push({
+              x: Math.random() * this.width,
+              y: Math.random() * this.height,
+              size: Math.random() * 1.8 + 0.6,
+              vx: (Math.random() - 0.5) * 0.35,
+              vy: -Math.random() * 0.32 - 0.08,
+              alpha: Math.random() * 0.6 + 0.2,
+              pulseSpeed: Math.random() * 0.02 + 0.01,
+              pulse: Math.random() * Math.PI
+            });
+          }
+        }
+
+        spawnHoldDust(x, y) {
+          for (let i = 0; i < 4; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * 75 + 25;
+            this.particles.push({
+              x: x + Math.cos(angle) * dist,
+              y: y + Math.sin(angle) * dist,
+              targetX: x,
+              targetY: y,
+              size: Math.random() * 2.2 + 1,
+              vx: (x - (x + Math.cos(angle) * dist)) * 0.045,
+              vy: (y - (y + Math.sin(angle) * dist)) * 0.045,
+              alpha: 0.85,
+              isConverging: true,
+              color: '#E5C384'
+            });
+          }
+        }
+
+        spawnSeedBurst(x, y) {
+          for (let i = 0; i < 45; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 7 + 2.5;
+            this.particles.push({
+              x: x,
+              y: y,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              size: Math.random() * 2.8 + 1.2,
+              alpha: 1.0,
+              isConverging: true,
+              color: Math.random() > 0.4 ? '#E5C384' : '#FFECCC'
+            });
+          }
+        }
+
+        spawnPetalBurst(x, y, color = '#E63946') {
+          const count = Math.floor(Math.random() * 5) + 7;
+          for (let i = 0; i < count; i++) {
+            this.fallingPetals.push({
+              x: x + (Math.random() - 0.5) * 50,
+              y: y + (Math.random() - 0.5) * 40,
+              size: Math.random() * 8 + 7,
+              vx: (Math.random() - 0.5) * 2.6 + 0.5,
+              vy: Math.random() * 1.8 + 0.9,
+              rotation: Math.random() * Math.PI * 2,
+              vRot: (Math.random() - 0.5) * 0.06,
+              alpha: 0.88,
+              color: color,
+              sway: Math.random() * 5
+            });
+          }
+        }
+
+        updateAndDraw() {
+          this.ctx.clearRect(0, 0, this.width, this.height);
+
+          for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+
+            if (p.isConverging) {
+              p.x += p.vx;
+              p.y += p.vy;
+              p.alpha -= 0.024;
+              if (p.alpha <= 0) {
+                this.particles.splice(i, 1);
+                continue;
+              }
+            } else {
+              p.pulse += p.pulseSpeed;
+              p.x += p.vx + Math.sin(p.pulse) * 0.22;
+              p.y += p.vy;
+
+              if (p.y < -10) p.y = this.height + 10;
+              if (p.x < -10) p.x = this.width + 10;
+              if (p.x > this.width + 10) p.x = -10;
+            }
+
+            const currentAlpha = p.isConverging ? p.alpha : (Math.sin(p.pulse) * 0.3 + 0.5) * p.alpha;
+            this.ctx.save();
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            this.ctx.fillStyle = p.color || (STATE.phase === 'bloomed' ? 'rgba(247, 244, 235, ' + currentAlpha + ')' : 'rgba(229, 195, 132, ' + currentAlpha + ')');
+            if (p.size > 1.4) {
+              this.ctx.shadowBlur = 6;
+              this.ctx.shadowColor = 'rgba(229, 195, 132, 0.45)';
+            }
+            this.ctx.fill();
+            this.ctx.restore();
+          }
+
+          for (let i = this.fallingPetals.length - 1; i >= 0; i--) {
+            const pt = this.fallingPetals[i];
+            pt.x += pt.vx + Math.sin(pt.sway += 0.028) * 0.85;
+            pt.y += pt.vy;
+            pt.rotation += pt.vRot;
+
+            pt.alpha = Math.max(0, pt.alpha - 0.0022);
+
+            const w = pt.size * 0.58 * (0.28 + Math.abs(Math.cos(pt.sway)) * 0.72);
+            const h = pt.size;
+            this.ctx.save();
+            this.ctx.translate(pt.x, pt.y);
+            this.ctx.rotate(pt.rotation);
+            this.ctx.globalAlpha = pt.alpha;
+            // Teardrop silhouette: rounded at the tip, pinched at the base.
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, h);
+            this.ctx.bezierCurveTo(w * 1.5, h * 0.35, w * 1.05, -h * 0.75, 0, -h);
+            this.ctx.bezierCurveTo(-w * 1.05, -h * 0.75, -w * 1.5, h * 0.35, 0, h);
+            this.ctx.closePath();
+            this.ctx.fillStyle = pt.color;
+            this.ctx.fill();
+            // A sliver of light down the fold catches the morning sun.
+            this.ctx.globalAlpha = pt.alpha * 0.4;
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, h * 0.7);
+            this.ctx.bezierCurveTo(w * 0.5, h * 0.1, w * 0.4, -h * 0.6, 0, -h * 0.85);
+            this.ctx.bezierCurveTo(-w * 0.16, -h * 0.6, -w * 0.2, h * 0.1, 0, h * 0.7);
+            this.ctx.closePath();
+            this.ctx.fillStyle = 'rgba(255, 250, 245, 0.75)';
+            this.ctx.fill();
+            this.ctx.restore();
+
+            if (pt.alpha <= 0.02 || pt.y > this.height + 35) {
+              this.fallingPetals.splice(i, 1);
+            }
+          }
+        }
+      }
+
+      const particles = new ParticleSystem(el.particleCanvas);
+      particles.initAmbientPollen();
+
+      /* ==========================================================================
+         BOTANICAL PROCEDURAL GARDEN GENERATOR & DENSE FLORAL ECOSYSTEM
+         ========================================================================== */
+      /* ==========================================================================
+         PROCEDURAL BOTANY ENGINE
+         Organic petal geometry, seeded variation & dynamic gradient factory.
+         Every petal outline is generated from a width profile with ruffled
+         edges, a curved centreline and an optional notched tip, so no two
+         petals in the garden are ever identical.
+         ========================================================================== */
+      const SVGNS = 'http://www.w3.org/2000/svg';
+
+      // --- Deterministic per-plant randomness (xorshift32) ---
+      function makeRng(seed) {
+        let s = (seed >>> 0) || 0x9E3779B9;
+        return function () {
+          s ^= s << 13; s >>>= 0;
+          s ^= s >>> 17;
+          s ^= s << 5;  s >>>= 0;
+          return s / 4294967296;
+        };
+      }
+      const jitter = (rnd, amt) => (rnd() * 2 - 1) * amt;
+
+      // --- Colour helpers -------------------------------------------------
+      function hexToRgb(hex) {
+        const h = hex.replace('#', '');
+        return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+      }
+      function rgbToHex(r, g, b) {
+        const c = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+        return `#${c(r)}${c(g)}${c(b)}`;
+      }
+      /** amt > 0 lightens toward white, amt < 0 deepens toward black. */
+      function shade(hex, amt) {
+        const [r, g, b] = hexToRgb(hex);
+        if (amt >= 0) return rgbToHex(r + (255 - r) * amt, g + (255 - g) * amt, b + (255 - b) * amt);
+        const k = 1 + amt;
+        return rgbToHex(r * k, g * k, b * k);
+      }
+      /** Rotate a colour slightly — gives every bloom its own unique tint. */
+      function tint(hex, deg, satBoost = 0) {
+        let [r, g, b] = hexToRgb(hex).map(v => v / 255);
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0; const l = (max + min) / 2; const d = max - min;
+        let s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+        if (d !== 0) {
+          if (max === r) h = ((g - b) / d) % 6;
+          else if (max === g) h = (b - r) / d + 2;
+          else h = (r - g) / d + 4;
+        }
+        h = (h * 60 + deg + 360) % 360;
+        s = Math.max(0, Math.min(1, s + satBoost));
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        const m = l - c / 2;
+        let rr, gg, bb;
+        if (h < 60) [rr, gg, bb] = [c, x, 0];
+        else if (h < 120) [rr, gg, bb] = [x, c, 0];
+        else if (h < 180) [rr, gg, bb] = [0, c, x];
+        else if (h < 240) [rr, gg, bb] = [0, x, c];
+        else if (h < 300) [rr, gg, bb] = [x, 0, c];
+        else [rr, gg, bb] = [c, 0, x];
+        return rgbToHex((rr + m) * 255, (gg + m) * 255, (bb + m) * 255);
+      }
+
+      // --- Gradient factory: builds <defs> entries on demand ---------------
+      const GradientFactory = (() => {
+        const built = new Set();
+        let defsNode = null;
+        const defs = () => defsNode || (defsNode = document.querySelector('#gardenSvg defs'));
+
+        function addStops(node, stops) {
+          stops.forEach(([offset, color, opacity]) => {
+            const s = document.createElementNS(SVGNS, 'stop');
+            s.setAttribute('offset', offset);
+            s.setAttribute('stop-color', color);
+            if (opacity !== undefined) s.setAttribute('stop-opacity', opacity);
+            node.appendChild(s);
+          });
+        }
+        return {
+          radial(id, stops, cx = '44%', cy = '24%', r = '86%') {
+            if (!built.has(id)) {
+              const g = document.createElementNS(SVGNS, 'radialGradient');
+              g.setAttribute('id', id);
+              g.setAttribute('cx', cx); g.setAttribute('cy', cy); g.setAttribute('r', r);
+              addStops(g, stops);
+              defs().appendChild(g);
+              built.add(id);
+            }
+            return `url(#${id})`;
+          },
+          linear(id, stops, x1 = '0%', y1 = '100%', x2 = '0%', y2 = '0%') {
+            if (!built.has(id)) {
+              const g = document.createElementNS(SVGNS, 'linearGradient');
+              g.setAttribute('id', id);
+              g.setAttribute('x1', x1); g.setAttribute('y1', y1);
+              g.setAttribute('x2', x2); g.setAttribute('y2', y2);
+              addStops(g, stops);
+              defs().appendChild(g);
+              built.add(id);
+            }
+            return `url(#${id})`;
+          }
+        };
+      })();
+
+      /**
+       * Builds the three-stop velvet ramp for one whorl of petals.
+       * depth 0 = outermost (deeper, shaded) → 1 = innermost (luminous).
+       */
+      function petalFill(baseHex, depth, key) {
+        return GradientFactory.radial(
+          `pf-${key}-${depth.toFixed(2)}`,
+          [
+            ['0%',   shade(baseHex, 0.44 - depth * 0.05)],
+            ['16%',  shade(baseHex, 0.20 + depth * 0.10)],
+            ['42%',  shade(baseHex, -0.06 + depth * 0.12)],
+            ['68%',  shade(baseHex, -0.36 + depth * 0.12)],
+            ['88%',  shade(baseHex, -0.58 + depth * 0.13)],
+            ['100%', shade(baseHex, -0.78 + depth * 0.13)]
+          ],
+          '46%', '22%', '95%'
+        );
+      }
+
+      /**
+       * Procedural petal outline.
+       * The silhouette is sampled from a width profile, given a wavy edge and
+       * a bent centreline, then smoothed with a closed Catmull-Rom spline.
+       */
+      function petalPath(o) {
+        const len = o.len || 70;
+        const wid = o.wid || 30;
+        const fullAt = o.fullAt === undefined ? 0.46 : o.fullAt;
+        const plump = o.plump === undefined ? 0.85 : o.plump;
+        const curl = o.curl || 0;
+        const lean = o.lean || 0;
+        const ruffle = o.ruffle || 0;
+        const ruffleFreq = o.ruffleFreq || 3;
+        const tip = o.tip || 'round';
+        const asym = o.asym || 0;
+        // Sample in proportion to the petal's size: a 17px heart petal needs a
+        // fraction of the curve segments a 92px guard petal does.
+        const steps = o.steps || Math.max(7, Math.min(15, Math.round(len / 7)));
+        const rnd = o.rnd || Math.random;
+
+        // Tipped petals stop short of the apex so the blade still has width
+        // there; the tip cap is then carved in explicitly.
+        const blunt = (tip === 'cleft' || tip === 'notch' || tip === 'fringe');
+        const tEnd = blunt ? 0.84 : 1;
+        const L = len / tEnd;
+
+        const e = Math.log(0.5) / Math.log(Math.max(0.08, Math.min(0.92, fullAt)));
+        const phaseR = rnd() * Math.PI * 2;
+        const phaseL = rnd() * Math.PI * 2;
+
+        const profile = (t) => Math.pow(Math.max(0, Math.sin(Math.PI * Math.pow(t, e))), plump);
+        // Centreline: bends sideways (curl) and tilts (lean) for a 3-D read.
+        const axisX = (t) => curl * Math.sin(Math.PI * t) + lean * t * t;
+        const axisY = (t) => -L * t;
+
+        const right = [], left = [];
+        for (let i = 0; i <= steps; i++) {
+          const t = (i / steps) * tEnd;
+          const base = wid * profile(t);
+          const waveR = 1 + ruffle * Math.sin(ruffleFreq * Math.PI * t + phaseR) * t;
+          const waveL = 1 + ruffle * Math.sin(ruffleFreq * Math.PI * t + phaseL) * t;
+          right.push([axisX(t) + base * waveR * (1 + asym), axisY(t)]);
+          left.push([axisX(t) - base * waveL * (1 - asym), axisY(t)]);
+        }
+
+        const pts = [[0, 0]];
+        for (let i = 1; i <= steps; i++) pts.push(right[i]);
+
+        const rx = right[steps][0], lx = left[steps][0];
+        const ax = axisX(tEnd);
+        const apex = -len;
+
+        if (tip === 'notch') {
+          pts.push([rx * 0.6 + ax * 0.4, apex]);
+          pts.push([ax, apex * 0.90]);
+          pts.push([lx * 0.6 + ax * 0.4, apex]);
+        } else if (tip === 'cleft') {
+          pts.push([rx * 0.72 + ax * 0.28, apex * 1.01]);
+          pts.push([ax, apex * 0.86]);
+          pts.push([lx * 0.72 + ax * 0.28, apex * 1.01]);
+        } else if (tip === 'fringe') {
+          // Three small teeth, the way a daisy ray or a cornflower is toothed.
+          const teeth = 3;
+          for (let k = 0; k <= teeth * 2; k++) {
+            const f = k / (teeth * 2);
+            const px = rx + (lx - rx) * f;
+            const peak = (k % 2 === 0) ? apex * 1.02 : apex * 0.84;
+            pts.push([px, peak]);
+          }
+        } else if (tip === 'point') {
+          pts.push([ax, apex * 1.08]);
+        }
+
+        for (let i = steps; i >= 1; i--) pts.push(left[i]);
+        return smoothClosed(pts);
+      }
+
+      /** Closed Catmull-Rom → cubic Bézier, rounded to keep the markup light. */
+      function smoothClosed(pts) {
+        const n = pts.length;
+        const f = (v) => Math.round(v * 10) / 10;
+        let d = `M ${f(pts[0][0])} ${f(pts[0][1])}`;
+        for (let i = 0; i < n; i++) {
+          const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+          const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+          const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+          d += ` C ${f(c1x)} ${f(c1y)}, ${f(c2x)} ${f(c2y)}, ${f(p2[0])} ${f(p2[1])}`;
+        }
+        return d + ' Z';
+      }
+
+      // --- Botanical colourways -------------------------------------------
+      const FLORA_PALETTE = {
+        rose: [
+          { key: 'crimson',  base: '#C8123C', heart: '#4A0316' },
+          { key: 'blush',    base: '#F294AE', heart: '#9B3B57' },
+          { key: 'peach',    base: '#F2A177', heart: '#A75235' },
+          { key: 'ivory',    base: '#F6E2CE', heart: '#C79A6B' },
+          { key: 'burgundy', base: '#8E0B2E', heart: '#2E0210' },
+          { key: 'coral',    base: '#F25C5C', heart: '#84172A' }
+        ],
+        peony: [
+          { key: 'porcelain', base: '#F9C6D6', heart: '#FFE9A8' },
+          { key: 'antique',   base: '#E48AA6', heart: '#FFE3A0' },
+          { key: 'cream',     base: '#F8E6D8', heart: '#F5C96A' },
+          { key: 'fuchsia',   base: '#D9578C', heart: '#FFE39B' }
+        ],
+        tulip: [
+          { key: 'coral',   base: '#F0576F', heart: '#2E3B1C' },
+          { key: 'apricot', base: '#F49A5C', heart: '#2E3B1C' },
+          { key: 'plum',    base: '#9A4CA8', heart: '#2E3B1C' },
+          { key: 'butter',  base: '#F3C544', heart: '#2E3B1C' }
+        ],
+        poppy: [
+          { key: 'vermilion', base: '#E02B1E', heart: '#141218' },
+          { key: 'scarlet',   base: '#F04635', heart: '#141218' },
+          { key: 'salmon',    base: '#F0705E', heart: '#141218' }
+        ],
+        sunflower: [
+          { key: 'gold',   base: '#F5A800', heart: '#3A1D08' },
+          { key: 'amber',  base: '#EE8E05', heart: '#2E1606' },
+          { key: 'lemon',  base: '#F7C518', heart: '#43240C' }
+        ],
+        daisy: [
+          { key: 'porcelain', base: '#F7F4EF', heart: '#F2A93B' },
+          { key: 'snow',      base: '#FFFFFF', heart: '#F6BE4E' },
+          { key: 'pinkish',   base: '#FBE7EA', heart: '#EE9B36' }
+        ],
+        wildflower: [
+          { key: 'cornflower', base: '#5A6FD0', heart: '#F7E04A' },
+          { key: 'periwinkle', base: '#8C93E8', heart: '#FFE86B' },
+          { key: 'lilac',      base: '#A97BD6', heart: '#FFE86B' }
+        ],
+        gypsophila: [
+          { key: 'snow', base: '#FFFFFF', heart: '#FFF6DA' }
+        ]
+      };
+
+      // Phones and low-core machines get the simplified geometry everywhere;
+      // the silhouettes are identical, only the petal count differs.
+      const LIGHT_RENDER = window.matchMedia('(max-width: 820px)').matches ||
+        (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      class BotanicalGarden {
+        constructor() {
+          this.stems = [];
+          this.flowers = [];
+          this.leaves = [];
+        }
+
+        clear() {
+          el.layerBackground.innerHTML = '';
+          el.layerMidBack.innerHTML = '';
+          el.layerMidground.innerHTML = '';
+          el.layerForeground.innerHTML = '';
+          this.stems = [];
+          this.flowers = [];
+          this.leaves = [];
+          STATE.flowers = [];
+        }
+
+        buildGarden(intentionType) {
+          this.clear();
+          STATE.activeType = intentionType;
+
+          const W = STATE.viewW;
+          const H = STATE.viewH;
+
+          let plantConfigs = [];
+
+          if (intentionType === 'love') {
+            plantConfigs = [
+              // Tier 1: Background Canopy
+              { type: 'wildflower', layer: 'bg', x: W * 0.18, y: H, targetH: H * 0.48, curve: -50, scale: 0.82, swayClass: 'swaying-b', delay: 0.8 },
+              { type: 'rose', layer: 'bg', x: W * 0.32, y: H, targetH: H * 0.42, curve: -35, scale: 0.88, swayClass: 'swaying-a', delay: 1.1 },
+              { type: 'peony', layer: 'bg', x: W * 0.50, y: H, targetH: H * 0.38, curve: 15, scale: 0.90, swayClass: 'swaying-gentle', delay: 1.3 },
+              { type: 'rose', layer: 'bg', x: W * 0.68, y: H, targetH: H * 0.40, curve: 40, scale: 0.88, swayClass: 'swaying-b', delay: 1.0 },
+              { type: 'wildflower', layer: 'bg', x: W * 0.82, y: H, targetH: H * 0.46, curve: 55, scale: 0.82, swayClass: 'swaying-a', delay: 0.9 },
+              { type: 'gypsophila', layer: 'bg', x: W * 0.08, y: H, targetH: H * 0.56, curve: -70, scale: 0.75, swayClass: 'swaying-gentle', delay: 1.5 },
+              { type: 'gypsophila', layer: 'bg', x: W * 0.92, y: H, targetH: H * 0.55, curve: 70, scale: 0.75, swayClass: 'swaying-gentle', delay: 1.5 },
+
+              // Tier 2: Mid-Back Supporting
+              { type: 'peony', layer: 'midback', x: W * 0.24, y: H, targetH: H * 0.54, curve: -75, scale: 0.96, swayClass: 'swaying-a', delay: 1.4 },
+              { type: 'tulip', layer: 'midback', x: W * 0.40, y: H, targetH: H * 0.47, curve: -20, scale: 0.98, swayClass: 'swaying-b', delay: 1.6 },
+              { type: 'tulip', layer: 'midback', x: W * 0.60, y: H, targetH: H * 0.48, curve: 25, scale: 0.98, swayClass: 'swaying-gentle', delay: 1.6 },
+              { type: 'peony', layer: 'midback', x: W * 0.76, y: H, targetH: H * 0.53, curve: 80, scale: 0.96, swayClass: 'swaying-a', delay: 1.4 },
+              { type: 'gypsophila', layer: 'midback', x: W * 0.30, y: H, targetH: H * 0.66, curve: -40, scale: 0.85, swayClass: 'swaying-b', delay: 2.0 },
+              { type: 'gypsophila', layer: 'midback', x: W * 0.70, y: H, targetH: H * 0.65, curve: 45, scale: 0.85, swayClass: 'swaying-b', delay: 2.0 },
+
+              // Tier 3: Hero Midground
+              { type: 'rose', layer: 'mid', x: W * 0.50, y: H, targetH: H * 0.45, curve: -25, scale: 1.25, swayClass: 'swaying-a', delay: 0 },
+              { type: 'peony', layer: 'mid', x: W * 0.35, y: H, targetH: H * 0.51, curve: -95, scale: 1.12, swayClass: 'swaying-b', delay: 0.5 },
+              { type: 'rose', layer: 'mid', x: W * 0.65, y: H, targetH: H * 0.49, curve: 100, scale: 1.15, swayClass: 'swaying-gentle', delay: 0.8 },
+              { type: 'rose', layer: 'mid', x: W * 0.16, y: H, targetH: H * 0.62, curve: -110, scale: 1.08, swayClass: 'swaying-a', delay: 1.8 },
+              { type: 'peony', layer: 'mid', x: W * 0.84, y: H, targetH: H * 0.61, curve: 110, scale: 1.08, swayClass: 'swaying-b', delay: 1.8 },
+              { type: 'tulip', layer: 'mid', x: W * 0.46, y: H, targetH: H * 0.58, curve: 15, scale: 1.02, swayClass: 'swaying-gentle', delay: 1.2 },
+              { type: 'tulip', layer: 'mid', x: W * 0.54, y: H, targetH: H * 0.59, curve: -15, scale: 1.02, swayClass: 'swaying-gentle', delay: 1.3 },
+
+              // Tier 4: Foreground Framing
+              { type: 'peony', layer: 'fore', x: W * 0.06, y: H, targetH: H * 0.68, curve: -120, scale: 1.25, swayClass: 'swaying-gentle', delay: 2.2 },
+              { type: 'rose', layer: 'fore', x: W * 0.94, y: H, targetH: H * 0.69, curve: 120, scale: 1.22, swayClass: 'swaying-a', delay: 2.3 },
+              { type: 'gypsophila', layer: 'fore', x: W * 0.22, y: H, targetH: H * 0.74, curve: -50, scale: 0.95, swayClass: 'swaying-b', delay: 2.5 },
+              { type: 'gypsophila', layer: 'fore', x: W * 0.78, y: H, targetH: H * 0.73, curve: 50, scale: 0.95, swayClass: 'swaying-b', delay: 2.5 },
+              { type: 'rose', layer: 'fore', x: W * 0.38, y: H, targetH: H * 0.72, curve: -30, scale: 1.05, swayClass: 'swaying-a', delay: 2.7 },
+              { type: 'peony', layer: 'fore', x: W * 0.62, y: H, targetH: H * 0.71, curve: 35, scale: 1.05, swayClass: 'swaying-gentle', delay: 2.8 }
+            ];
+          } else if (intentionType === 'friendship') {
+            plantConfigs = [
+              // Background
+              { type: 'daisy', layer: 'bg', x: W * 0.18, y: H, targetH: H * 0.46, curve: -55, scale: 0.85, swayClass: 'swaying-b', delay: 0.8 },
+              { type: 'sunflower', layer: 'bg', x: W * 0.32, y: H, targetH: H * 0.40, curve: -35, scale: 0.92, swayClass: 'swaying-a', delay: 1.1 },
+              { type: 'sunflower', layer: 'bg', x: W * 0.50, y: H, targetH: H * 0.37, curve: 15, scale: 0.95, swayClass: 'swaying-gentle', delay: 1.3 },
+              { type: 'sunflower', layer: 'bg', x: W * 0.68, y: H, targetH: H * 0.39, curve: 40, scale: 0.92, swayClass: 'swaying-b', delay: 1.0 },
+              { type: 'daisy', layer: 'bg', x: W * 0.82, y: H, targetH: H * 0.45, curve: 55, scale: 0.85, swayClass: 'swaying-a', delay: 0.9 },
+              { type: 'gypsophila', layer: 'bg', x: W * 0.08, y: H, targetH: H * 0.54, curve: -70, scale: 0.78, swayClass: 'swaying-gentle', delay: 1.5 },
+              { type: 'gypsophila', layer: 'bg', x: W * 0.92, y: H, targetH: H * 0.53, curve: 70, scale: 0.78, swayClass: 'swaying-gentle', delay: 1.5 },
+
+              // Mid-back
+              { type: 'daisy', layer: 'midback', x: W * 0.24, y: H, targetH: H * 0.53, curve: -70, scale: 0.95, swayClass: 'swaying-a', delay: 1.4 },
+              { type: 'sunflower', layer: 'midback', x: W * 0.40, y: H, targetH: H * 0.46, curve: -20, scale: 1.02, swayClass: 'swaying-b', delay: 1.6 },
+              { type: 'sunflower', layer: 'midback', x: W * 0.60, y: H, targetH: H * 0.47, curve: 25, scale: 1.02, swayClass: 'swaying-gentle', delay: 1.6 },
+              { type: 'daisy', layer: 'midback', x: W * 0.76, y: H, targetH: H * 0.52, curve: 75, scale: 0.95, swayClass: 'swaying-a', delay: 1.4 },
+              { type: 'wildflower', layer: 'midback', x: W * 0.30, y: H, targetH: H * 0.65, curve: -40, scale: 0.90, swayClass: 'swaying-b', delay: 2.0 },
+              { type: 'wildflower', layer: 'midback', x: W * 0.70, y: H, targetH: H * 0.64, curve: 45, scale: 0.90, swayClass: 'swaying-b', delay: 2.0 },
+
+              // Hero Midground
+              { type: 'sunflower', layer: 'mid', x: W * 0.50, y: H, targetH: H * 0.44, curve: -20, scale: 1.28, swayClass: 'swaying-a', delay: 0 },
+              { type: 'daisy', layer: 'mid', x: W * 0.35, y: H, targetH: H * 0.52, curve: -85, scale: 1.10, swayClass: 'swaying-b', delay: 0.5 },
+              { type: 'sunflower', layer: 'mid', x: W * 0.65, y: H, targetH: H * 0.48, curve: 90, scale: 1.18, swayClass: 'swaying-gentle', delay: 0.8 },
+              { type: 'sunflower', layer: 'mid', x: W * 0.16, y: H, targetH: H * 0.61, curve: -105, scale: 1.12, swayClass: 'swaying-a', delay: 1.8 },
+              { type: 'daisy', layer: 'mid', x: W * 0.84, y: H, targetH: H * 0.60, curve: 105, scale: 1.10, swayClass: 'swaying-b', delay: 1.8 },
+              { type: 'daisy', layer: 'mid', x: W * 0.46, y: H, targetH: H * 0.58, curve: 15, scale: 1.05, swayClass: 'swaying-gentle', delay: 1.2 },
+              { type: 'daisy', layer: 'mid', x: W * 0.54, y: H, targetH: H * 0.59, curve: -15, scale: 1.05, swayClass: 'swaying-gentle', delay: 1.3 },
+
+              // Foreground
+              { type: 'sunflower', layer: 'fore', x: W * 0.06, y: H, targetH: H * 0.67, curve: -115, scale: 1.26, swayClass: 'swaying-gentle', delay: 2.2 },
+              { type: 'daisy', layer: 'fore', x: W * 0.94, y: H, targetH: H * 0.68, curve: 115, scale: 1.20, swayClass: 'swaying-a', delay: 2.3 },
+              { type: 'wildflower', layer: 'fore', x: W * 0.22, y: H, targetH: H * 0.73, curve: -45, scale: 0.98, swayClass: 'swaying-b', delay: 2.5 },
+              { type: 'wildflower', layer: 'fore', x: W * 0.78, y: H, targetH: H * 0.72, curve: 45, scale: 0.98, swayClass: 'swaying-b', delay: 2.5 },
+              { type: 'daisy', layer: 'fore', x: W * 0.38, y: H, targetH: H * 0.71, curve: -25, scale: 1.08, swayClass: 'swaying-a', delay: 2.7 },
+              { type: 'sunflower', layer: 'fore', x: W * 0.62, y: H, targetH: H * 0.70, curve: 30, scale: 1.12, swayClass: 'swaying-gentle', delay: 2.8 }
+            ];
+          } else {
+            // Masterpiece Botanical Tapestry
+            plantConfigs = [
+              // Background
+              { type: 'wildflower', layer: 'bg', x: W * 0.18, y: H, targetH: H * 0.46, curve: -50, scale: 0.85, swayClass: 'swaying-b', delay: 0.8 },
+              { type: 'rose', layer: 'bg', x: W * 0.32, y: H, targetH: H * 0.41, curve: -35, scale: 0.90, swayClass: 'swaying-a', delay: 1.1 },
+              { type: 'sunflower', layer: 'bg', x: W * 0.50, y: H, targetH: H * 0.37, curve: 15, scale: 0.95, swayClass: 'swaying-gentle', delay: 1.3 },
+              { type: 'poppy', layer: 'bg', x: W * 0.68, y: H, targetH: H * 0.40, curve: 40, scale: 0.90, swayClass: 'swaying-b', delay: 1.0 },
+              { type: 'tulip', layer: 'bg', x: W * 0.82, y: H, targetH: H * 0.45, curve: 55, scale: 0.85, swayClass: 'swaying-a', delay: 0.9 },
+              { type: 'gypsophila', layer: 'bg', x: W * 0.08, y: H, targetH: H * 0.55, curve: -70, scale: 0.78, swayClass: 'swaying-gentle', delay: 1.5 },
+              { type: 'gypsophila', layer: 'bg', x: W * 0.92, y: H, targetH: H * 0.54, curve: 70, scale: 0.78, swayClass: 'swaying-gentle', delay: 1.5 },
+
+              // Mid-back
+              { type: 'peony', layer: 'midback', x: W * 0.24, y: H, targetH: H * 0.53, curve: -70, scale: 0.98, swayClass: 'swaying-a', delay: 1.4 },
+              { type: 'tulip', layer: 'midback', x: W * 0.40, y: H, targetH: H * 0.46, curve: -20, scale: 1.02, swayClass: 'swaying-b', delay: 1.6 },
+              { type: 'poppy', layer: 'midback', x: W * 0.60, y: H, targetH: H * 0.47, curve: 25, scale: 1.02, swayClass: 'swaying-gentle', delay: 1.6 },
+              { type: 'daisy', layer: 'midback', x: W * 0.76, y: H, targetH: H * 0.52, curve: 75, scale: 0.98, swayClass: 'swaying-a', delay: 1.4 },
+              { type: 'gypsophila', layer: 'midback', x: W * 0.30, y: H, targetH: H * 0.65, curve: -40, scale: 0.88, swayClass: 'swaying-b', delay: 2.0 },
+              { type: 'wildflower', layer: 'midback', x: W * 0.70, y: H, targetH: H * 0.64, curve: 45, scale: 0.88, swayClass: 'swaying-b', delay: 2.0 },
+
+              // Hero Midground
+              { type: 'rose', layer: 'mid', x: W * 0.50, y: H, targetH: H * 0.44, curve: -20, scale: 1.25, swayClass: 'swaying-a', delay: 0 },
+              { type: 'sunflower', layer: 'mid', x: W * 0.35, y: H, targetH: H * 0.51, curve: -85, scale: 1.15, swayClass: 'swaying-b', delay: 0.5 },
+              { type: 'peony', layer: 'mid', x: W * 0.65, y: H, targetH: H * 0.49, curve: 90, scale: 1.16, swayClass: 'swaying-gentle', delay: 0.8 },
+              { type: 'poppy', layer: 'mid', x: W * 0.16, y: H, targetH: H * 0.61, curve: -105, scale: 1.14, swayClass: 'swaying-a', delay: 1.8 },
+              { type: 'tulip', layer: 'mid', x: W * 0.84, y: H, targetH: H * 0.60, curve: 105, scale: 1.12, swayClass: 'swaying-b', delay: 1.8 },
+              { type: 'daisy', layer: 'mid', x: W * 0.46, y: H, targetH: H * 0.58, curve: 15, scale: 1.05, swayClass: 'swaying-gentle', delay: 1.2 },
+              { type: 'wildflower', layer: 'mid', x: W * 0.54, y: H, targetH: H * 0.59, curve: -15, scale: 1.05, swayClass: 'swaying-gentle', delay: 1.3 },
+
+              // Foreground
+              { type: 'peony', layer: 'fore', x: W * 0.06, y: H, targetH: H * 0.67, curve: -115, scale: 1.28, swayClass: 'swaying-gentle', delay: 2.2 },
+              { type: 'rose', layer: 'fore', x: W * 0.94, y: H, targetH: H * 0.68, curve: 115, scale: 1.24, swayClass: 'swaying-a', delay: 2.3 },
+              { type: 'poppy', layer: 'fore', x: W * 0.22, y: H, targetH: H * 0.73, curve: -45, scale: 1.10, swayClass: 'swaying-b', delay: 2.5 },
+              { type: 'sunflower', layer: 'fore', x: W * 0.78, y: H, targetH: H * 0.72, curve: 45, scale: 1.12, swayClass: 'swaying-b', delay: 2.5 },
+              { type: 'daisy', layer: 'fore', x: W * 0.38, y: H, targetH: H * 0.71, curve: -25, scale: 1.08, swayClass: 'swaying-a', delay: 2.7 },
+              { type: 'tulip', layer: 'fore', x: W * 0.62, y: H, targetH: H * 0.70, curve: 30, scale: 1.10, swayClass: 'swaying-gentle', delay: 2.8 }
+            ];
+          }
+
+          plantConfigs.forEach((cfg, idx) => {
+            this.createPlant(cfg, idx);
+          });
+        }
+
+        createPlant(cfg, plantIndex) {
+          let parentGroup = el.layerMidground;
+          if (cfg.layer === 'bg') parentGroup = el.layerBackground;
+          else if (cfg.layer === 'midback') parentGroup = el.layerMidBack;
+          else if (cfg.layer === 'fore') parentGroup = el.layerForeground;
+
+          const plantGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          if (cfg.layer !== 'bg' && !(LIGHT_RENDER && cfg.layer === 'midback')) {
+            plantGroup.setAttribute('class', cfg.swayClass);
+            plantGroup.style.animationDelay = `-${(plantIndex * 1.6) % 6}s`;
+          }
+
+          const startX = cfg.x;
+          const startY = cfg.y;
+          const endX = cfg.x + cfg.curve;
+          const endY = cfg.targetH;
+          const cp1X = cfg.x + cfg.curve * 0.18;
+          const cp1Y = startY - (startY - endY) * 0.42;
+          const cp2X = cfg.x + cfg.curve * 0.88;
+          const cp2Y = startY - (startY - endY) * 0.78;
+
+          const stemPathD = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
+
+          const stem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          stem.setAttribute('d', stemPathD);
+          stem.setAttribute('class', 'botanical-stem');
+          stem.setAttribute('stroke', (cfg.layer === 'bg' || cfg.layer === 'midback') ? 'url(#gradStemSecondary)' : 'url(#gradStemMain)');
+          stem.setAttribute('stroke-width', cfg.layer === 'bg' ? '4.2' : (cfg.layer === 'fore' ? '8.5' : '6.5'));
+          plantGroup.appendChild(stem);
+
+          // Add curved thorn on rose stems
+          if (cfg.type === 'rose') {
+            const thorn = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const thornPt = this.getBezierPoint(0.48, startX, startY, cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+            thorn.setAttribute('d', `M ${thornPt.x} ${thornPt.y} Q ${thornPt.x + 8} ${thornPt.y + 4}, ${thornPt.x + 10} ${thornPt.y + 12} Q ${thornPt.x + 3} ${thornPt.y + 10}, ${thornPt.x} ${thornPt.y + 8} Z`);
+            thorn.setAttribute('fill', '#263824');
+            plantGroup.appendChild(thorn);
+          }
+
+          parentGroup.appendChild(plantGroup);
+
+          // Safe length calculation
+          let stemLength = 0;
+          try {
+            stemLength = stem.getTotalLength();
+          } catch(e) {}
+          if (!stemLength || stemLength <= 0 || isNaN(stemLength)) {
+            stemLength = Math.hypot(endX - startX, endY - startY) * 1.25;
+          }
+
+          stem.style.strokeDasharray = stemLength;
+          stem.style.strokeDashoffset = stemLength;
+
+          this.stems.push({
+            el: stem,
+            length: stemLength,
+            delay: cfg.delay
+          });
+
+          // Leaves along stem nodes
+          const leafNodes = [0.35, 0.65];
+          leafNodes.forEach((nodeT, lIdx) => {
+            const leafPoint = this.getBezierPoint(nodeT, startX, startY, cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+            const side = (lIdx % 2 === 0) ? (cfg.curve >= 0 ? -1 : 1) : (cfg.curve >= 0 ? 1 : -1);
+            const leaf = this.createLeaf(leafPoint.x, leafPoint.y, side, cfg.scale, plantIndex * 31 + lIdx);
+            plantGroup.appendChild(leaf);
+            this.leaves.push({
+              el: leaf,
+              delay: cfg.delay + 0.7 + lIdx * 0.4
+            });
+          });
+
+          // Flower at tip
+          const detail = (LIGHT_RENDER || cfg.layer === 'bg' || cfg.layer === 'midback') ? 'low' : 'high';
+          const flowerGroup = this.createFlower(cfg.type, endX, endY, cfg.scale, detail, plantIndex + 1);
+          plantGroup.appendChild(flowerGroup.element);
+
+          this.flowers.push({
+            type: cfg.type,
+            group: flowerGroup.element,
+            petals: flowerGroup.petals,
+            bud: flowerGroup.bud,
+            delay: cfg.delay + 1.4,
+            color: flowerGroup.primaryColor,
+            x: endX,
+            y: endY
+          });
+
+          STATE.flowers.push({
+            type: cfg.type,
+            element: flowerGroup.element,
+            color: flowerGroup.primaryColor,
+            x: endX,
+            y: endY
+          });
+        }
+
+        getBezierPoint(t, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y) {
+          const cx = 3 * (p1x - p0x);
+          const bx = 3 * (p2x - p1x) - cx;
+          const ax = p3x - p0x - cx - bx;
+          const cy = 3 * (p1y - p0y);
+          const by = 3 * (p2y - p1y) - cy;
+          const ay = p3y - p0y - cy - by;
+
+          const xt = ax * Math.pow(t, 3) + bx * Math.pow(t, 2) + cx * t + p0x;
+          const yt = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0y;
+          return { x: xt, y: yt };
+        }
+
+        createLeaf(x, y, side, scale = 1.0, seed = 1) {
+          const rnd = makeRng(seed * 7919 + 13);
+          const g = document.createElementNS(SVGNS, 'g');
+          g.setAttribute('class', 'botanical-leaf');
+          const angle = (side > 0 ? 28 : -152) + jitter(rnd, 9);
+          const s = scale * (0.86 + rnd() * 0.28);
+          g.setAttribute('transform', `translate(${x}, ${y}) rotate(${angle.toFixed(1)}) scale(${s.toFixed(2)})`);
+
+          // Serrated botanical blade, generated point by point.
+          const L = 96, W = 24;
+          const top = [], bot = [];
+          const steps = 18;
+          for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const w = W * Math.pow(Math.sin(Math.PI * Math.pow(t, 0.78)), 0.8);
+            const teeth = 1 + 0.16 * Math.sin(9 * Math.PI * t);
+            const droop = 6 * Math.sin(Math.PI * t);
+            top.push([L * t, -w * teeth + droop * 0.2]);
+            bot.push([L * t, w * teeth * 0.92 + droop * 0.35]);
+          }
+          const outline = [[0, 0]].concat(top.slice(1)).concat([[L * 1.04, 1]]).concat(bot.slice(1).reverse());
+
+          const blade = document.createElementNS(SVGNS, 'path');
+          blade.setAttribute('d', smoothClosed(outline));
+          blade.setAttribute('fill', 'url(#gradLeaf)');
+          blade.setAttribute('filter', 'drop-shadow(0 3px 5px rgba(0,0,0,0.35))');
+          g.appendChild(blade);
+
+          // Glossy fold highlight along the upper half of the blade.
+          const gloss = document.createElementNS(SVGNS, 'path');
+          gloss.setAttribute('d', smoothClosed([[4, 0]].concat(top.slice(2, steps).map(p => [p[0], p[1] * 0.62]))));
+          gloss.setAttribute('fill', GradientFactory.linear('leafGloss', [
+            ['0%', '#B7E0A6', '0.30'], ['60%', '#B7E0A6', '0.08'], ['100%', '#B7E0A6', '0.00']
+          ], '0%', '0%', '100%', '0%'));
+          g.appendChild(gloss);
+
+          const midrib = document.createElementNS(SVGNS, 'path');
+          midrib.setAttribute('d', `M 0 0 Q ${L * 0.52} 1.5, ${L * 0.99} 1`);
+          midrib.setAttribute('fill', 'none');
+          midrib.setAttribute('stroke', 'url(#gradLeafVein)');
+          midrib.setAttribute('stroke-width', '2');
+          midrib.setAttribute('stroke-linecap', 'round');
+          g.appendChild(midrib);
+
+          // Lateral venation
+          for (let v = 1; v <= 4; v++) {
+            const t = 0.16 + v * 0.18;
+            const px = L * t;
+            const pw = W * Math.pow(Math.sin(Math.PI * Math.pow(t, 0.78)), 0.8);
+            [-1, 1].forEach(dir => {
+              const vein = document.createElementNS(SVGNS, 'path');
+              vein.setAttribute('d', `M ${px.toFixed(1)} 0 Q ${(px + pw * 0.5).toFixed(1)} ${(dir * pw * 0.45).toFixed(1)}, ${(px + pw * 1.15).toFixed(1)} ${(dir * pw * 0.78).toFixed(1)}`);
+              vein.setAttribute('fill', 'none');
+              vein.setAttribute('stroke', 'url(#gradLeafVein)');
+              vein.setAttribute('stroke-width', '0.9');
+              vein.setAttribute('opacity', '0.55');
+              g.appendChild(vein);
+            });
+          }
+          return g;
+        }
+
+        createFlower(type, x, y, scale = 1.0, detail = 'high', seed = 1) {
+          const group = document.createElementNS(SVGNS, 'g');
+          group.setAttribute('class', 'flower-group');
+          group.setAttribute('data-type', type);
+          group.setAttribute('transform', `translate(${x}, ${y}) scale(${scale})`);
+
+          const rnd = makeRng(Math.floor(seed * 104729) + 7);
+          const hi = detail === 'high';
+          const petals = [];
+
+          // Each bloom draws its own colourway, then shifts it a few degrees
+          // so that no two flowers of the same species look cloned.
+          const swatches = FLORA_PALETTE[type] || FLORA_PALETTE.wildflower;
+          const swatch = swatches[Math.floor(rnd() * swatches.length) % swatches.length];
+          const hueShift = jitter(rnd, 7);
+          const base = tint(swatch.base, hueShift, jitter(rnd, 0.05));
+          const heart = tint(swatch.heart, hueShift * 0.5);
+          const key = `${type}-${swatch.key}-${Math.round(hueShift / 3)}`;
+          const primaryColor = base;
+
+          // --- Calyx: sepals cradling the bloom from behind ---
+          const bud = document.createElementNS(SVGNS, 'g');
+          bud.setAttribute('class', 'botanical-bud');
+          const sepalCount = type === 'gypsophila' ? 3 : 5;
+          for (let s = 0; s < sepalCount; s++) {
+            const sepal = document.createElementNS(SVGNS, 'path');
+            const ang = (s - (sepalCount - 1) / 2) * 24 + jitter(rnd, 4);
+            sepal.setAttribute('d', petalPath({
+              len: 30 + jitter(rnd, 5), wid: 8, fullAt: 0.30, plump: 0.7,
+              tip: 'point', curl: jitter(rnd, 4), rnd
+            }));
+            sepal.setAttribute('fill', GradientFactory.linear('sepalGrad', [
+              ['0%', '#101B0B'], ['55%', '#22371A'], ['100%', '#3F5C2E']
+            ]));
+            sepal.setAttribute('transform', `rotate(${ang.toFixed(1)})`);
+            bud.appendChild(sepal);
+          }
+          group.appendChild(bud);
+
+          /**
+           * Adds one petal: silhouette + a shared shading overlay that darkens
+           * the throat and catches light at the tip. Returns the wrapper so
+           * the bloom animation can scale it open from its base.
+           */
+          const addPetal = (d, fill, rot, opts = {}) => {
+            const wrap = document.createElementNS(SVGNS, 'g');
+            const off = opts.offset || 0;
+            const sc = opts.scale || 1;
+            wrap.setAttribute('transform',
+              `rotate(${rot.toFixed(1)})` + (off ? ` translate(0, ${off.toFixed(1)})` : '') + (sc !== 1 ? ` scale(${sc.toFixed(3)})` : ''));
+
+            const unit = document.createElementNS(SVGNS, 'g');
+            unit.setAttribute('class', 'petal');
+
+            const p = document.createElementNS(SVGNS, 'path');
+            p.setAttribute('d', d);
+            p.setAttribute('fill', fill);
+            // A hairline of the deepened base colour keeps each petal legible
+            // where it overlaps its neighbours.
+            if (opts.edge !== false) {
+              p.setAttribute('stroke', shade(base, -0.58));
+              p.setAttribute('stroke-width', opts.edgeWidth || '0.9');
+              p.setAttribute('stroke-opacity', opts.edgeOpacity || '0.38');
+              p.setAttribute('stroke-linejoin', 'round');
+            }
+            unit.appendChild(p);
+
+            // Venation, for the species where it actually reads: tulips and poppies.
+            if (hi && opts.veins) {
+              const vl = opts.veins.len, vw = opts.veins.wid;
+              for (let k = -2; k <= 2; k++) {
+                if (k === 0) continue;
+                const spread = (k / 2) * vw * 0.62;
+                const v = document.createElementNS(SVGNS, 'path');
+                v.setAttribute('d', `M 0 ${(-vl * 0.06).toFixed(1)} Q ${(spread * 0.45).toFixed(1)} ${(-vl * 0.48).toFixed(1)}, ${spread.toFixed(1)} ${(-vl * 0.86).toFixed(1)}`);
+                v.setAttribute('fill', 'none');
+                v.setAttribute('stroke', shade(base, -0.5));
+                v.setAttribute('stroke-width', '0.8');
+                v.setAttribute('stroke-opacity', '0.22');
+                v.setAttribute('pointer-events', 'none');
+                unit.appendChild(v);
+              }
+            }
+
+            wrap.appendChild(unit);
+            group.appendChild(wrap);
+            petals.push(unit);
+            return unit;
+          };
+
+          const disc = (r, fill, extra) => {
+            const c = document.createElementNS(SVGNS, 'circle');
+            c.setAttribute('cx', '0'); c.setAttribute('cy', '0');
+            c.setAttribute('r', String(r));
+            c.setAttribute('fill', fill);
+            if (extra) Object.keys(extra).forEach(k => c.setAttribute(k, extra[k]));
+            group.appendChild(c);
+            return c;
+          };
+
+          /** Ambient occlusion pooled in the throat — reads as a dome, not a disc. */
+          const coreShadow = (r) => {
+            if (!hi) return;
+            const c = document.createElementNS(SVGNS, 'circle');
+            c.setAttribute('cx', '0'); c.setAttribute('cy', '0');
+            c.setAttribute('r', String(r));
+            c.setAttribute('pointer-events', 'none');
+            c.setAttribute('fill', GradientFactory.radial('coreOcclusion', [
+              ['0%', '#1A0309', '0.62'],
+              ['38%', '#20060D', '0.40'],
+              ['72%', '#20060D', '0.14'],
+              ['100%', '#20060D', '0.00']
+            ], '50%', '50%', '50%'));
+            group.appendChild(c);
+          };
+
+          /* ---------------------------------------------------------------
+             ROSE — concentric whorls on the golden angle, opening from a
+             tightly rolled heart. Outer whorls sit back and reflex outward;
+             inner whorls cup inward and catch the light.
+             --------------------------------------------------------------- */
+          if (type === 'rose') {
+            const whorls = hi
+              ? [
+                  { n: 9, len: 88, wid: 42, depth: 0.00, fullAt: 0.56, plump: 0.72, ruffle: 0.13, tip: 'cleft', curlAmt: 9,  offset: 5 },
+                  { n: 8, len: 74, wid: 36, depth: 0.22, fullAt: 0.52, plump: 0.76, ruffle: 0.11, tip: 'cleft', curlAmt: 7,  offset: 3 },
+                  { n: 7, len: 60, wid: 30, depth: 0.45, fullAt: 0.48, plump: 0.80, ruffle: 0.09, tip: 'round', curlAmt: 6,  offset: 2 },
+                  { n: 6, len: 47, wid: 24, depth: 0.68, fullAt: 0.44, plump: 0.86, ruffle: 0.07, tip: 'round', curlAmt: 5,  offset: 1 },
+                  { n: 5, len: 36, wid: 19, depth: 0.86, fullAt: 0.40, plump: 0.92, ruffle: 0.05, tip: 'round', curlAmt: 4,  offset: 0 }
+                ]
+              : [
+                  { n: 8, len: 84, wid: 40, depth: 0.05, fullAt: 0.54, plump: 0.74, ruffle: 0.10, tip: 'round', curlAmt: 8, offset: 4 },
+                  { n: 6, len: 62, wid: 30, depth: 0.45, fullAt: 0.48, plump: 0.82, ruffle: 0.07, tip: 'round', curlAmt: 6, offset: 2 },
+                  { n: 5, len: 42, wid: 22, depth: 0.80, fullAt: 0.42, plump: 0.90, ruffle: 0.05, tip: 'round', curlAmt: 4, offset: 0 }
+                ];
+
+            // Every petal leans the same way, which is what makes a rose read
+            // as a spiral rather than a rosette.
+            const spiral = rnd() < 0.5 ? -1 : 1;
+
+            whorls.forEach((w, wi) => {
+              const fill = petalFill(base, w.depth, key);
+              const spin = wi * 137.5 + jitter(rnd, 10);
+              for (let i = 0; i < w.n; i++) {
+                const d = petalPath({
+                  len: w.len * (1 + jitter(rnd, 0.09)),
+                  wid: w.wid * (1 + jitter(rnd, 0.11)),
+                  fullAt: w.fullAt, plump: w.plump,
+                  ruffle: w.ruffle, ruffleFreq: 2 + Math.floor(rnd() * 3),
+                  tip: w.tip,
+                  curl: spiral * w.curlAmt * (0.55 + rnd() * 0.7),
+                  lean: spiral * (1 + rnd() * 2.5),
+                  asym: spiral * (0.04 + rnd() * 0.06), rnd
+                });
+                addPetal(d, fill, (i / w.n) * 360 + spin + jitter(rnd, 6), {
+                  len: w.len, offset: w.offset, scale: 1 + jitter(rnd, 0.05)
+                });
+              }
+            });
+
+            coreShadow(34);
+
+            // The heart: three tight whorls of deeply cupped petals, each one
+            // wrapped in the same direction, closing over the centre.
+            const heartWhorls = hi
+              ? [{ n: 7, len: 36, wid: 26 }, { n: 6, len: 27, wid: 21 }, { n: 5, len: 19, wid: 16 }]
+              : [{ n: 6, len: 34, wid: 25 }, { n: 4, len: 22, wid: 17 }];
+            heartWhorls.forEach((w, wi) => {
+              // The cone of a rose is its darkest place, not its brightest.
+              const fill = petalFill(base, Math.max(0, 0.34 - wi * 0.15), key);
+              const spin = 44 + wi * 61 + jitter(rnd, 8);
+              for (let i = 0; i < w.n; i++) {
+                const d = petalPath({
+                  len: w.len * (1 + jitter(rnd, 0.10)),
+                  wid: w.wid * (1 + jitter(rnd, 0.10)),
+                  fullAt: 0.62, plump: 1.05, ruffle: 0.04,
+                  tip: 'round',
+                  curl: spiral * (w.wid * 0.42),
+                  lean: spiral * 2,
+                  asym: spiral * 0.14,
+                  rnd
+                });
+                addPetal(d, fill, (i / w.n) * 360 + spin, {
+                  len: w.len, edgeOpacity: '0.30', scale: 1 + jitter(rnd, 0.05)
+                });
+              }
+            });
+
+            // Shadow sunk into the last turn of the spiral
+            coreShadow(20);
+
+            const core = disc(9, GradientFactory.radial(`roseCore-${key}`, [
+              ['0%', shade(heart, 0.22)], ['55%', heart], ['100%', shade(heart, -0.55)]
+            ], '42%', '38%', '70%'));
+            core.setAttribute('opacity', '0.95');
+
+            if (hi) {
+              // Morning dew clinging to an outer petal.
+              const dew = document.createElementNS(SVGNS, 'ellipse');
+              dew.setAttribute('cx', (-18 + jitter(rnd, 10)).toFixed(1));
+              dew.setAttribute('cy', (-40 + jitter(rnd, 12)).toFixed(1));
+              dew.setAttribute('rx', '2.6'); dew.setAttribute('ry', '3.4');
+              dew.setAttribute('fill', 'url(#gradDewdrop)');
+              group.appendChild(dew);
+            }
+
+          /* --- SUNFLOWER: two rows of lanceolate rays + Fibonacci disc --- */
+          } else if (type === 'sunflower') {
+            const rows = hi ? [
+              { n: 21, len: 94, wid: 15, depth: 0.05, off: 0 },
+              { n: 18, len: 80, wid: 13, depth: 0.42, off: 9 }
+            ] : [
+              { n: 18, len: 90, wid: 15, depth: 0.10, off: 0 }
+            ];
+            rows.forEach((row) => {
+              const fill = petalFill(base, row.depth, key);
+              for (let i = 0; i < row.n; i++) {
+                const d = petalPath({
+                  len: row.len * (1 + jitter(rnd, 0.10)),
+                  wid: row.wid * (1 + jitter(rnd, 0.14)),
+                  fullAt: 0.40, plump: 0.62, ruffle: 0.06, ruffleFreq: 4,
+                  tip: 'cleft', curl: jitter(rnd, 5), lean: jitter(rnd, 4), rnd
+                });
+                addPetal(d, fill, (i / row.n) * 360 + row.off + jitter(rnd, 4), { len: row.len });
+              }
+            });
+
+            disc(31, GradientFactory.radial(`sunDisc-${key}`, [
+              ['0%', shade(heart, -0.30)], ['46%', heart], ['80%', shade(heart, 0.30)],
+              ['93%', shade(base, -0.12)], ['100%', shade(heart, -0.25)]
+            ], '48%', '46%', '56%'), { filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.55))' });
+
+            const florets = hi ? 54 : 26;
+            for (let f = 0; f < florets; f++) {
+              const r = 3.05 * Math.sqrt(f);
+              const theta = f * 137.5077 * (Math.PI / 180);
+              const fl = document.createElementNS(SVGNS, 'circle');
+              fl.setAttribute('cx', (r * Math.cos(theta)).toFixed(1));
+              fl.setAttribute('cy', (r * Math.sin(theta)).toFixed(1));
+              fl.setAttribute('r', (f > 34 ? 2.3 : 1.9).toFixed(1));
+              fl.setAttribute('fill', f > 40 ? shade(base, 0.34) : (f > 20 ? shade(heart, 0.34) : shade(heart, -0.30)));
+              fl.setAttribute('opacity', '0.9');
+              group.appendChild(fl);
+            }
+
+          /* --- PEONY: crowded ruffles, crumpled at the core --- */
+          } else if (type === 'peony') {
+            const whorls = hi
+              ? [
+                  { n: 10, len: 84, wid: 44, depth: 0.00, ruffle: 0.20, plump: 0.68, off: 4 },
+                  { n: 9,  len: 66, wid: 36, depth: 0.32, ruffle: 0.24, plump: 0.74, off: 2 },
+                  { n: 8,  len: 48, wid: 27, depth: 0.66, ruffle: 0.28, plump: 0.82, off: 1 },
+                  { n: 7,  len: 32, wid: 19, depth: 0.90, ruffle: 0.34, plump: 0.90, off: 0 }
+                ]
+              : [
+                  { n: 9, len: 80, wid: 42, depth: 0.06, ruffle: 0.18, plump: 0.70, off: 3 },
+                  { n: 7, len: 56, wid: 30, depth: 0.52, ruffle: 0.24, plump: 0.80, off: 1 },
+                  { n: 6, len: 34, wid: 20, depth: 0.88, ruffle: 0.30, plump: 0.90, off: 0 }
+                ];
+            whorls.forEach((w, wi) => {
+              const fill = petalFill(base, w.depth, key);
+              const spin = wi * 137.5 + jitter(rnd, 12);
+              for (let i = 0; i < w.n; i++) {
+                const d = petalPath({
+                  len: w.len * (1 + jitter(rnd, 0.10)),
+                  wid: w.wid * (1 + jitter(rnd, 0.13)),
+                  fullAt: 0.50, plump: w.plump,
+                  ruffle: w.ruffle, ruffleFreq: 3 + Math.floor(rnd() * 3),
+                  tip: 'cleft', curl: jitter(rnd, 8), asym: jitter(rnd, 0.10), rnd
+                });
+                addPetal(d, fill, (i / w.n) * 360 + spin + jitter(rnd, 8), {
+                  len: w.len, offset: w.off, scale: 1 + jitter(rnd, 0.06)
+                });
+              }
+            });
+            coreShadow(40);
+
+            // Golden stamen crown
+            const crown = hi ? 14 : 8;
+            for (let i = 0; i < crown; i++) {
+              const a = (i / crown) * Math.PI * 2;
+              const len = 13 + jitter(rnd, 3);
+              const st = document.createElementNS(SVGNS, 'path');
+              st.setAttribute('d', `M ${(Math.cos(a) * 3).toFixed(1)} ${(Math.sin(a) * 3).toFixed(1)} L ${(Math.cos(a) * len).toFixed(1)} ${(Math.sin(a) * len).toFixed(1)}`);
+              st.setAttribute('stroke', shade(heart, -0.22));
+              st.setAttribute('stroke-width', '1');
+              st.setAttribute('stroke-linecap', 'round');
+              st.setAttribute('opacity', '0.75');
+              group.appendChild(st);
+              const an = document.createElementNS(SVGNS, 'ellipse');
+              an.setAttribute('cx', (Math.cos(a) * len).toFixed(1));
+              an.setAttribute('cy', (Math.sin(a) * len).toFixed(1));
+              an.setAttribute('rx', '2.4'); an.setAttribute('ry', '1.6');
+              an.setAttribute('transform', `rotate(${(a * 180 / Math.PI).toFixed(1)} ${(Math.cos(a) * len).toFixed(1)} ${(Math.sin(a) * len).toFixed(1)})`);
+              an.setAttribute('fill', shade(heart, 0.28));
+              group.appendChild(an);
+            }
+            disc(7, GradientFactory.radial(`peonyCore-${key}`, [
+              ['0%', shade(heart, 0.40)], ['100%', shade(heart, -0.30)]
+            ]));
+
+          /* --- TULIP: six satin tepals closing into a goblet --- */
+          } else if (type === 'tulip') {
+            const outer = petalFill(base, 0.10, key);
+            const inner = petalFill(base, 0.62, key);
+            const ring = [
+              { rot: -19, len: 100, wid: 27, fill: outer, curl: -11, off: 4 },
+              { rot:  19, len: 100, wid: 27, fill: outer, curl:  11, off: 4 },
+              { rot:  -9, len: 112, wid: 26, fill: outer, curl:  -4, off: 2 },
+              { rot:   9, len: 112, wid: 26, fill: outer, curl:   4, off: 2 },
+              { rot:  -3, len: 118, wid: 25, fill: inner, curl:  -1, off: 0 },
+              { rot:   3, len: 118, wid: 25, fill: inner, curl:   1, off: 0 }
+            ];
+            ring.forEach((tp) => {
+              const d = petalPath({
+                len: tp.len * (1 + jitter(rnd, 0.05)),
+                wid: tp.wid * (1 + jitter(rnd, 0.07)),
+                fullAt: 0.58, plump: 0.74, ruffle: 0.03,
+                tip: 'round', curl: tp.curl + jitter(rnd, 2), rnd
+              });
+              addPetal(d, tp.fill, tp.rot + jitter(rnd, 2), { len: tp.len, offset: tp.off, veins: { len: tp.len, wid: tp.wid } });
+            });
+
+          /* --- DAISY: slim toothed rays around a golden dome --- */
+          } else if (type === 'daisy') {
+            const count = hi ? 30 : 20;
+            const fill = petalFill(base, 0.55, key);
+            for (let i = 0; i < count; i++) {
+              const d = petalPath({
+                len: 74 * (1 + jitter(rnd, 0.10)),
+                wid: 9 * (1 + jitter(rnd, 0.16)),
+                fullAt: 0.52, plump: 0.60, ruffle: 0.05,
+                tip: 'fringe', curl: jitter(rnd, 3), lean: jitter(rnd, 3), rnd
+              });
+              addPetal(d, fill, (i / count) * 360 + jitter(rnd, 5), { len: 74, scale: 1 + jitter(rnd, 0.06) });
+            }
+            disc(19, GradientFactory.radial(`daisyDisc-${key}`, [
+              ['0%', shade(heart, 0.50)], ['52%', heart], ['100%', shade(heart, -0.45)]
+            ], '42%', '36%', '62%'), { filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.35))' });
+
+          /* --- POPPY: papery crinkled cups with a dark basal blotch --- */
+          } else if (type === 'poppy') {
+            const rows = hi ? [
+              { n: 3, len: 88, wid: 54, depth: 0.05, off: 0 },
+              { n: 3, len: 76, wid: 47, depth: 0.45, off: 60 }
+            ] : [
+              { n: 4, len: 84, wid: 52, depth: 0.15, off: 0 }
+            ];
+            rows.forEach((row) => {
+              const fill = petalFill(base, row.depth, key);
+              for (let i = 0; i < row.n; i++) {
+                const d = petalPath({
+                  len: row.len * (1 + jitter(rnd, 0.09)),
+                  wid: row.wid * (1 + jitter(rnd, 0.10)),
+                  fullAt: 0.58, plump: 0.58,
+                  ruffle: 0.15, ruffleFreq: 5 + Math.floor(rnd() * 3),
+                  tip: 'ruffle', curl: jitter(rnd, 8), asym: jitter(rnd, 0.09), rnd
+                });
+                addPetal(d, fill, (i / row.n) * 360 + row.off + jitter(rnd, 7), {
+                  len: row.len, veins: { len: row.len, wid: row.wid }
+                });
+              }
+            });
+            // Charcoal blotch at the throat
+            disc(26, GradientFactory.radial(`poppyBlotch-${key}`, [
+              ['0%', '#15131A', '0.95'], ['58%', '#1C1822', '0.75'], ['100%', '#1C1822', '0.00']
+            ], '50%', '50%', '50%'));
+            const stamens = hi ? 16 : 9;
+            for (let i = 0; i < stamens; i++) {
+              const a = (i / stamens) * Math.PI * 2 + jitter(rnd, 0.1);
+              const len = 15 + jitter(rnd, 4);
+              const st = document.createElementNS(SVGNS, 'path');
+              st.setAttribute('d', `M 0 0 L ${(Math.cos(a) * len).toFixed(1)} ${(Math.sin(a) * len).toFixed(1)}`);
+              st.setAttribute('stroke', '#241F2B');
+              st.setAttribute('stroke-width', '1.2');
+              group.appendChild(st);
+              const an = document.createElementNS(SVGNS, 'circle');
+              an.setAttribute('cx', (Math.cos(a) * len).toFixed(1));
+              an.setAttribute('cy', (Math.sin(a) * len).toFixed(1));
+              an.setAttribute('r', '1.7');
+              an.setAttribute('fill', '#3C3348');
+              group.appendChild(an);
+            }
+            disc(8, GradientFactory.radial(`poppyPod-${key}`, [
+              ['0%', '#6C7A50'], ['70%', '#3E4A2B'], ['100%', '#1E2514']
+            ], '42%', '36%', '70%'));
+
+          /* --- GYPSOPHILA: airy sprays of five-petalled florets --- */
+          } else if (type === 'gypsophila') {
+            const sprigs = hi ? 11 : 6;
+            for (let s = 0; s < sprigs; s++) {
+              const ang = -76 + (s / (sprigs - 1)) * 152 + jitter(rnd, 7);
+              const reach = 26 + rnd() * 34;
+              const arm = document.createElementNS(SVGNS, 'path');
+              arm.setAttribute('d', `M 0 0 Q ${(Math.sin(ang * Math.PI / 180) * reach * 0.4).toFixed(1)} ${(-reach * 0.6).toFixed(1)}, ${(Math.sin(ang * Math.PI / 180) * reach).toFixed(1)} ${(-Math.cos(ang * Math.PI / 180) * reach).toFixed(1)}`);
+              arm.setAttribute('fill', 'none');
+              arm.setAttribute('stroke', '#42603A');
+              arm.setAttribute('stroke-width', '1.4');
+              group.appendChild(arm);
+
+              const anchor = document.createElementNS(SVGNS, 'g');
+              anchor.setAttribute('transform', `rotate(${ang.toFixed(1)}) translate(0, ${(-reach).toFixed(1)})`);
+              const floret = document.createElementNS(SVGNS, 'g');
+              floret.setAttribute('class', 'petal');
+              const size = 6.4 + jitter(rnd, 1.5);
+              for (let k = 0; k < 5; k++) {
+                const p = document.createElementNS(SVGNS, 'path');
+                p.setAttribute('d', petalPath({ len: size * 2.1, wid: size, fullAt: 0.62, plump: 0.7, tip: 'round', rnd }));
+                p.setAttribute('fill', GradientFactory.radial(`gyp-${key}`, [
+                  ['0%', '#FFFFFF'], ['62%', shade(base, -0.03)], ['100%', '#C3D2DE']
+                ], '45%', '35%', '70%'));
+                p.setAttribute('transform', `rotate(${(k / 5) * 360 + jitter(rnd, 8)})`);
+                floret.appendChild(p);
+              }
+              const eye = document.createElementNS(SVGNS, 'circle');
+              eye.setAttribute('r', '1.6'); eye.setAttribute('fill', heart);
+              floret.appendChild(eye);
+              anchor.appendChild(floret);
+              group.appendChild(anchor);
+              petals.push(floret);
+            }
+
+          /* --- WILDFLOWER: cornflower stars with a luminous eye --- */
+          } else {
+            const count = hi ? 7 : 5;
+            const fill = petalFill(base, 0.40, key);
+            for (let i = 0; i < count; i++) {
+              const d = petalPath({
+                len: 66 * (1 + jitter(rnd, 0.12)),
+                wid: 17 * (1 + jitter(rnd, 0.14)),
+                fullAt: 0.58, plump: 0.62, ruffle: 0.08,
+                tip: 'fringe', curl: jitter(rnd, 5), rnd
+              });
+              addPetal(d, fill, (i / count) * 360 + jitter(rnd, 8), { len: 66 });
+            }
+            const innerFill = petalFill(base, 0.85, key);
+            for (let i = 0; i < 5; i++) {
+              const d = petalPath({ len: 30, wid: 10, fullAt: 0.5, plump: 0.7, tip: 'point', curl: jitter(rnd, 3), rnd });
+              addPetal(d, innerFill, (i / 5) * 360 + 26 + jitter(rnd, 6), { shade: false });
+            }
+            disc(8, GradientFactory.radial(`wildEye-${key}`, [
+              ['0%', shade(heart, 0.45)], ['60%', heart], ['100%', shade(heart, -0.45)]
+            ], '42%', '38%', '66%'));
+          }
+
+          this.attachFlowerInteractivity(group, type, primaryColor);
+
+          return { element: group, petals: petals, bud: bud, primaryColor: primaryColor };
+        }
+
+
+        attachFlowerInteractivity(group, type, color) {
+          let holdTimer = null;
+          let tooltipTimer = null;
+
+          const showPoeticMeaning = () => {
+            if (STATE.phase !== 'bloomed') return;
+            const info = FLOWER_MEANINGS[type] || { name: 'Botanical', desc: 'Resilience' };
+            el.poeticTag.querySelector('.meaning-name').textContent = info.name;
+            el.poeticTag.querySelector('.meaning-desc').textContent = info.desc;
+
+            const rect = group.getBoundingClientRect();
+            const posX = rect.left + rect.width / 2;
+            const posY = rect.top;
+
+            el.poeticTag.style.left = `${posX}px`;
+            el.poeticTag.style.top = `${posY}px`;
+            el.poeticTag.classList.add('visible');
+          };
+
+          const hidePoeticMeaning = () => {
+            el.poeticTag.classList.remove('visible');
+            if (holdTimer) clearTimeout(holdTimer);
+            if (tooltipTimer) clearTimeout(tooltipTimer);
+          };
+
+          group.addEventListener('mouseenter', showPoeticMeaning);
+          group.addEventListener('mouseleave', hidePoeticMeaning);
+
+          group.addEventListener('click', (e) => {
+            if (STATE.phase !== 'bloomed') return;
+            e.stopPropagation();
+
+            showPoeticMeaning();
+            if (tooltipTimer) clearTimeout(tooltipTimer);
+            tooltipTimer = setTimeout(hidePoeticMeaning, 2800);
+
+            const rect = group.getBoundingClientRect();
+            const posX = rect.left + rect.width / 2;
+            const posY = rect.top + rect.height / 2;
+            particles.spawnPetalBurst(posX, posY, color);
+
+            group.classList.add('active-tap');
+            setTimeout(() => group.classList.remove('active-tap'), 500);
+
+            audio.playBloomChime(440 + Math.random() * 220);
+
+            STATE.easterEggFlowerCount++;
+            if (STATE.easterEggFlowerCount === 5) {
+              showEasterEgg("The garden breathes with you.");
+            }
+          });
+
+          // Long press on flower easter egg
+          group.addEventListener('pointerdown', () => {
+            if (STATE.phase !== 'bloomed') return;
+            holdTimer = setTimeout(() => {
+              showEasterEgg("Everything blooms differently.");
+              audio.playBloomChime(880);
+            }, 1000);
+          });
+
+          group.addEventListener('pointerup', () => {
+            if (holdTimer) clearTimeout(holdTimer);
+          });
+          group.addEventListener('pointercancel', () => {
+            if (holdTimer) clearTimeout(holdTimer);
+          });
+        }
+
+        sproutMiniFlower(clientX, clientY) {
+          const svgRect = el.gardenSvg.getBoundingClientRect();
+          const svgX = ((clientX - svgRect.left) / svgRect.width) * STATE.viewW;
+          const svgY = ((clientY - svgRect.top) / svgRect.height) * STATE.viewH;
+
+          const types = ['wildflower', 'daisy', 'tulip', 'poppy', 'rose'];
+          const pickedType = types[Math.floor(Math.random() * types.length)];
+          const flowerGroup = this.createFlower(pickedType, svgX, svgY, 0.72, 'high', Date.now() % 100000);
+
+          el.layerForeground.appendChild(flowerGroup.element);
+
+          flowerGroup.element.classList.add('revealed');
+          flowerGroup.bud.classList.add('visible');
+          setTimeout(() => {
+            flowerGroup.petals.forEach((p, idx) => {
+              setTimeout(() => {
+                p.classList.add('bloomed');
+              }, idx * 40);
+            });
+            particles.spawnPetalBurst(clientX, clientY, flowerGroup.primaryColor);
+            audio.playBloomChime(780);
+          }, 250);
+        }
+
+        instantFullBloom() {
+          this.stems.forEach(s => {
+            s.el.style.opacity = '1';
+            s.el.style.strokeDashoffset = '0';
+          });
+          this.leaves.forEach(l => l.el.classList.add('unfolded'));
+          this.flowers.forEach(f => {
+            f.group.classList.add('revealed');
+            f.bud.classList.add('visible');
+            f.petals.forEach(p => p.classList.add('bloomed'));
+          });
+        }
+      }
+
+      const garden = new BotanicalGarden();
+
+      /* ==========================================================================
+         CINEMATIC BLOOM SEQUENCE CONTROLLER (8 - 14 SECONDS)
+         ========================================================================== */
+      class BloomOrchestrator {
+        startGrowth() {
+          STATE.phase = 'growing';
+
+          // 1. Fade out Intro Screen smoothly
+          el.introScreen.classList.add('hidden');
+
+          // 2. Light Transition Phase 1: Deep Night -> Blue Hour
+          this.transitionAtmosphere('blueHour');
+
+          // 3. Stems emerge and climb upward sequentially
+          garden.stems.forEach(stemObj => {
+            setTimeout(() => {
+              stemObj.el.style.opacity = '1';
+              stemObj.el.style.strokeDashoffset = '0';
+            }, stemObj.delay * 1000);
+          });
+
+          // 4. Leaves unfurl from stem nodes
+          garden.leaves.forEach(leafObj => {
+            setTimeout(() => {
+              leafObj.el.classList.add('unfolded');
+            }, leafObj.delay * 1000);
+          });
+
+          // 5. Buds appear and swell
+          garden.flowers.forEach(flowerObj => {
+            setTimeout(() => {
+              flowerObj.group.classList.add('revealed');
+              flowerObj.bud.classList.add('visible');
+            }, flowerObj.delay * 1000);
+          });
+
+          // 6. Light Transition Phase 2: Blue Hour -> Sunrise Amber Radiance
+          setTimeout(() => {
+            this.transitionAtmosphere('sunrise');
+          }, 3800);
+
+          // 7. Grand Petal Blooming (staggered organic wave)
+          garden.flowers.forEach((flowerObj, fIdx) => {
+            setTimeout(() => {
+              flowerObj.petals.forEach((petal, pIdx) => {
+                setTimeout(() => {
+                  petal.classList.add('bloomed');
+                }, pIdx * 45 + Math.random() * 20);
+              });
+
+              const notes = [528, 594, 660, 792, 880, 1056];
+              const note = notes[fIdx % notes.length];
+              audio.playBloomChime(note);
+
+              const flowerRect = flowerObj.group.getBoundingClientRect();
+              particles.spawnPetalBurst(flowerRect.left + flowerRect.width / 2, flowerRect.top + flowerRect.height / 2, flowerObj.color);
+
+            }, (flowerObj.delay + 1.2) * 1000);
+          });
+
+          // 8. Light Transition Phase 3: Sunrise -> Warm Morning Light & Sunbeams
+          setTimeout(() => {
+            this.transitionAtmosphere('morningLight');
+            audio.playSunriseSwell();
+          }, 7400);
+
+          // 9. Sequence Complete -> Reveal Final Message
+          setTimeout(() => {
+            STATE.phase = 'bloomed';
+            this.revealFinalMessage();
+          }, 9600);
+        }
+
+        transitionAtmosphere(stateName) {
+          if (stateName === 'blueHour') {
+            document.documentElement.style.setProperty('--sky-top', '#0D1220');
+            document.documentElement.style.setProperty('--sky-mid', '#162238');
+            document.documentElement.style.setProperty('--sky-bottom', '#101624');
+            document.documentElement.style.setProperty('--sun-glow-y', '60%');
+            document.documentElement.style.setProperty('--garden-lift', '0.88');
+            document.documentElement.style.setProperty('--garden-sat', '0.88');
+          } else if (stateName === 'sunrise') {
+            document.documentElement.style.setProperty('--sky-top', '#2A1A2C');
+            document.documentElement.style.setProperty('--sky-mid', '#8A4740');
+            document.documentElement.style.setProperty('--sky-bottom', '#2A1519');
+            document.documentElement.style.setProperty('--sun-glow-opacity', '0.75');
+            document.documentElement.style.setProperty('--sun-glow-color', 'rgba(255, 168, 112, 0.50)');
+            document.documentElement.style.setProperty('--sun-glow-y', '50%');
+            document.documentElement.style.setProperty('--light-beam-opacity', '0.45');
+            document.documentElement.style.setProperty('--garden-lift', '1');
+            document.documentElement.style.setProperty('--garden-sat', '1');
+          } else if (stateName === 'morningLight') {
+            document.documentElement.style.setProperty('--sky-top', '#31485A');
+            document.documentElement.style.setProperty('--sky-mid', '#D2A878');
+            document.documentElement.style.setProperty('--sky-bottom', '#1E2A24');
+            document.documentElement.style.setProperty('--sun-glow-opacity', '1');
+            document.documentElement.style.setProperty('--sun-glow-color', 'rgba(255, 233, 191, 0.58)');
+            document.documentElement.style.setProperty('--sun-glow-y', '40%');
+            document.documentElement.style.setProperty('--light-beam-opacity', '0.9');
+            document.documentElement.style.setProperty('--garden-lift', '1.14');
+            document.documentElement.style.setProperty('--garden-sat', '1.08');
+          }
+        }
+
+        revealFinalMessage() {
+          const saved = loadDedication();
+
+          el.finalNameEdit.textContent =
+            STATE.personalizedData.to || saved.to || '';
+          el.finalMainQuote.textContent =
+            STATE.personalizedData.message || saved.message || DEFAULT_DEDICATION.message;
+
+          el.finalSubQuote.textContent = STATE.isPersonalized
+            ? "Some things just need time to grow."
+            : "Beautiful things take time.";
+
+          const from = STATE.personalizedData.from || saved.from || '';
+          el.finalAuthor.textContent = from ? `— ${from}` : '';
+          el.finalAuthor.style.display = from ? 'block' : 'none';
+
+          syncDedicationToState();
+
+          if (saved.to || STATE.isPersonalized) {
+            el.finalEditHint.classList.add('dismissed');
+          }
+
+          el.finalMessageOverlay.classList.add('revealed');
+          el.finalActionsBar.classList.add('revealed');
+        }
+
+        resetToSeed() {
+          bloomTriggered = false;
+          el.finalMessageOverlay.classList.remove('revealed');
+          el.finalActionsBar.classList.remove('revealed');
+          el.poeticTag.classList.remove('visible');
+
+          document.documentElement.style.setProperty('--sky-top', '#06070A');
+          document.documentElement.style.setProperty('--sky-mid', '#0C0E15');
+          document.documentElement.style.setProperty('--sky-bottom', '#08090C');
+          document.documentElement.style.setProperty('--sun-glow-opacity', '0');
+          document.documentElement.style.setProperty('--sun-glow-y', '65%');
+          document.documentElement.style.setProperty('--light-beam-opacity', '0');
+
+          garden.buildGarden(STATE.activeType);
+
+          STATE.phase = 'intro';
+          STATE.holdProgress = 0;
+          STATE.isHolding = false;
+          el.seedHoldButton.classList.remove('holding');
+          el.holdProgressCircle.style.transition = 'none';
+          updateHoldRing(0);
+          setTimeout(() => {
+            el.holdProgressCircle.style.transition = 'stroke-dashoffset 0.04s linear';
+          }, 60);
+
+          el.introScreen.classList.remove('hidden');
+          startAutoBloomCountdown();
+        }
+      }
+
+      const orchestrator = new BloomOrchestrator();
+
+      /* ==========================================================================
+         BLOOM INTERACTION (Instant Single-Click, Smooth Hold, & Auto-Bloom)
+         ========================================================================== */
+      const RING_CIRCUMFERENCE = 440; // 2 * PI * 70
+      let bloomTriggered = false;
+      let autoBloomTimer = null;
+      let autoBloomSecondsLeft = 6;
+      let autoBloomInterval = null;
+
+      function updateHoldRing(progress01) {
+        const offset = RING_CIRCUMFERENCE * (1 - progress01);
+        el.holdProgressCircle.style.strokeDashoffset = offset;
+      }
+
+      function stopAutoBloomTimer() {
+        if (autoBloomTimer) clearTimeout(autoBloomTimer);
+        if (autoBloomInterval) clearInterval(autoBloomInterval);
+        autoBloomTimer = null;
+        autoBloomInterval = null;
+        if (el.autoBloomStatus) {
+          el.autoBloomStatus.style.opacity = '0';
+        }
+      }
+
+      function startAutoBloomCountdown() {
+        stopAutoBloomTimer();
+        autoBloomSecondsLeft = 6;
+        if (el.autoBloomStatus) el.autoBloomStatus.style.opacity = '0.7';
+        if (el.autoBloomCountdown) el.autoBloomCountdown.textContent = autoBloomSecondsLeft;
+
+        autoBloomInterval = setInterval(() => {
+          if (STATE.phase !== 'intro') {
+            stopAutoBloomTimer();
+            return;
+          }
+          autoBloomSecondsLeft--;
+          if (el.autoBloomCountdown) {
+            el.autoBloomCountdown.textContent = Math.max(0, autoBloomSecondsLeft);
+          }
+          if (autoBloomSecondsLeft <= 0) {
+            stopAutoBloomTimer();
+            triggerBloom('auto');
+          }
+        }, 1000);
+      }
+
+      function triggerBloom(source = 'click') {
+        if (bloomTriggered || STATE.phase !== 'intro') return;
+        bloomTriggered = true;
+        stopAutoBloomTimer();
+
+        STATE.phase = 'growing';
+        STATE.isHolding = false;
+        el.seedHoldButton.classList.add('holding');
+
+        // Swift, satisfying ring fill animation
+        el.holdProgressCircle.style.transition = 'stroke-dashoffset 0.36s cubic-bezier(0.16, 1, 0.3, 1)';
+        el.holdProgressCircle.style.strokeDashoffset = '0';
+
+        // Play bloom opening chime sound
+        audio.playBloomChime(528);
+
+        // Haptic feedback
+        if (window.navigator && window.navigator.vibrate) {
+          window.navigator.vibrate([35, 55, 95]);
+        }
+
+        const seedRect = el.seedHoldButton.getBoundingClientRect();
+        const cx = seedRect.left + seedRect.width / 2;
+        const cy = seedRect.top + seedRect.height / 2;
+        particles.spawnSeedBurst(cx, cy);
+
+        setTimeout(() => {
+          orchestrator.startGrowth();
+        }, 320);
+      }
+
+      function startHolding() {
+        if (STATE.phase !== 'intro' || bloomTriggered) return;
+        stopAutoBloomTimer();
+        STATE.isHolding = true;
+        el.seedHoldButton.classList.add('holding');
+
+        if (window.navigator && window.navigator.vibrate) {
+          window.navigator.vibrate(15);
+        }
+      }
+
+      function endHolding() {
+        if (!STATE.isHolding) return;
+        STATE.isHolding = false;
+        // Releasing after touching triggers bloom immediately!
+        triggerBloom('release');
+      }
+
+      function holdAnimationLoop(now) {
+        const dt = Math.min(now - STATE.lastFrameTime, 100);
+        STATE.lastFrameTime = now;
+
+        if (STATE.phase === 'intro' && !bloomTriggered) {
+          if (STATE.isHolding) {
+            STATE.holdProgress = Math.min(STATE.holdProgress + dt / 1400, 1.0);
+
+            const rect = el.seedHoldButton.getBoundingClientRect();
+            particles.spawnHoldDust(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+            if (STATE.holdProgress >= 1.0) {
+              triggerBloom('hold_full');
+            } else {
+              updateHoldRing(STATE.holdProgress);
+            }
+          }
+        }
+
+        requestAnimationFrame(holdAnimationLoop);
+      }
+      requestAnimationFrame(holdAnimationLoop);
+
+      // --- EVENT LISTENERS: BULLETPROOF CLICK & HOLD HANDLING ---
+
+      // 1. Primary Direct Button Click
+      el.clickToBloomBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerBloom('button');
+      });
+
+      // 2. Seed Wrapper Click
+      el.seedHoldButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerBloom('seed');
+      });
+
+      // 3. Prompt Text Click
+      el.holdPromptLabel.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerBloom('prompt');
+      });
+
+      // 4. Mouse / Touch Hold support (smooth fill, triggers on release or on full)
+      el.seedHoldButton.addEventListener('mousedown', startHolding);
+      window.addEventListener('mouseup', endHolding);
+
+      // Touch events (passive so click events flow freely)
+      el.seedHoldButton.addEventListener('touchstart', () => {
+        startHolding();
+      }, { passive: true });
+
+      window.addEventListener('touchend', () => {
+        if (STATE.isHolding) {
+          endHolding();
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchcancel', () => {
+        if (STATE.isHolding) {
+          endHolding();
+        }
+      });
+
+      el.seedHoldButton.addEventListener('contextmenu', (e) => e.preventDefault());
+
+      // 5. Keyboard accessibility: Enter or Space on seed or button triggers bloom
+      el.seedHoldButton.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          triggerBloom('key');
+        }
+      });
+
+      el.clickToBloomBtn.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          triggerBloom('key');
+        }
+      });
+
+      /* ==========================================================================
+         PARALLAX & CURSOR PROXIMITY
+         ========================================================================== */
+      window.addEventListener('pointermove', (e) => {
+        STATE.mouse.targetX = e.clientX;
+        STATE.mouse.targetY = e.clientY;
+      });
+
+      function parallaxLoop() {
+        STATE.mouse.x += (STATE.mouse.targetX - STATE.mouse.x) * 0.05;
+        STATE.mouse.y += (STATE.mouse.targetY - STATE.mouse.y) * 0.05;
+
+        const tiltX = (STATE.mouse.x / window.innerWidth - 0.5) * 6.5;
+        const tiltY = (STATE.mouse.y / window.innerHeight - 0.5) * -4.5;
+
+        if (STATE.phase === 'bloomed') {
+          el.gardenSvg.style.transform = `rotateY(${tiltX}deg) rotateX(${tiltY}deg)`;
+        }
+
+        particles.updateAndDraw();
+        requestAnimationFrame(parallaxLoop);
+      }
+      requestAnimationFrame(parallaxLoop);
+
+      // Double-click/double-tap to sprout mini flower
+      let lastTap = 0;
+      window.addEventListener('pointerdown', (e) => {
+        if (STATE.phase !== 'bloomed') return;
+        const now = Date.now();
+        if (now - lastTap < 320) {
+          if (!e.target.closest('#finalActionsBar') && !e.target.closest('#giftModalOverlay') && !e.target.closest('#keepsakeModalOverlay') && !e.target.closest('header') && !e.target.closest('.editable-field')) {
+            garden.sproutMiniFlower(e.clientX, e.clientY);
+          }
+        }
+        lastTap = now;
+      });
+
+      /* ==========================================================================
+         URL PARAMETERS & PERSONALIZED BLOOM SYSTEM
+         ========================================================================== */
+      function checkUrlParameters() {
+        const params = new URLSearchParams(window.location.search);
+        const to = params.get('to');
+        const from = params.get('from');
+        const message = params.get('message');
+        const type = params.get('type') || 'love';
+
+        if (to && message) {
+          STATE.isPersonalized = true;
+          STATE.personalizedData = {
+            to: decodeURIComponent(to),
+            from: from ? decodeURIComponent(from) : '',
+            message: decodeURIComponent(message),
+            type: type
+          };
+          STATE.activeType = type;
+
+          el.introHeadline.textContent = `Someone planted something special for you, ${STATE.personalizedData.to}.`;
+          el.introSubline.textContent = "Click below to watch your garden bloom.";
+        } else {
+          STATE.isPersonalized = false;
+          STATE.activeType = 'love';
+        }
+
+        garden.buildGarden(STATE.activeType);
+      }
+
+      /* ==========================================================================
+         KEEPSAKE CARD GENERATION (VIRAL HIGH-FASHION IMAGE EXPORT)
+         ========================================================================== */
+      function generateKeepsakeCard() {
+        const canvas = el.hiddenCardCanvas;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width; // 1080
+        const H = canvas.height; // 1350
+
+        // 1. Rich Fine Art Botanical Background
+        const bgGrad = ctx.createRadialGradient(W / 2, H * 0.45, 100, W / 2, H / 2, 800);
+        bgGrad.addColorStop(0, '#162218');
+        bgGrad.addColorStop(0.5, '#0E1410');
+        bgGrad.addColorStop(1, '#060807');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // 2. Soft Gold Foil Border & Fine Flourishes
+        ctx.strokeStyle = '#E5C384';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(45, 45, W - 90, H - 90);
+        ctx.strokeStyle = 'rgba(229, 195, 132, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(55, 55, W - 110, H - 110);
+
+        // 3. Header Typography
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(247, 244, 235, 0.6)';
+        ctx.font = '500 18px "Plus Jakarta Sans", sans-serif';
+        ctx.letterSpacing = '8px';
+        ctx.fillText('BLOOM° BOTANICAL GARDEN', W / 2, 120);
+
+        ctx.fillStyle = '#E5C384';
+        ctx.font = 'italic 400 24px "Cormorant Garamond", serif';
+        ctx.letterSpacing = '2px';
+        ctx.fillText('A Garden That Never Wilts', W / 2, 160);
+
+        // 4. Botanical Centerpiece Silhouette & Golden Orbs
+        const flowerCenterY = H * 0.46;
+        const centerGlow = ctx.createRadialGradient(W / 2, flowerCenterY, 30, W / 2, flowerCenterY, 320);
+        centerGlow.addColorStop(0, 'rgba(229, 195, 132, 0.28)');
+        centerGlow.addColorStop(0.5, 'rgba(217, 30, 71, 0.15)');
+        centerGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = centerGlow;
+        ctx.fillRect(W / 2 - 350, flowerCenterY - 350, 700, 700);
+
+        // Draw Stylized Botanical Emblem in Center, in the colour of the intention
+        const CARD_BLOOM_COLOR = {
+          'love': '#C8123C', 'friendship': '#F5A800', 'new-beginning': '#F9C6D6',
+          'thinking-of-you': '#8C93E8', 'birthday': '#F0576F', 'miss-you': '#9A4CA8', 'keep-going': '#E02B1E'
+        };
+        drawStylizedCardRose(ctx, W / 2, flowerCenterY, 1.75, CARD_BLOOM_COLOR[STATE.activeType] || '#C8123C');
+
+        // Floating Gold Pollen Sparkles on Card
+        for (let i = 0; i < 45; i++) {
+          const px = W * 0.15 + Math.random() * W * 0.7;
+          const py = H * 0.2 + Math.random() * H * 0.55;
+          const pr = Math.random() * 2.5 + 1;
+          ctx.beginPath();
+          ctx.arc(px, py, pr, 0, Math.PI * 2);
+          ctx.fillStyle = Math.random() > 0.4 ? 'rgba(229, 195, 132, 0.7)' : 'rgba(255, 245, 230, 0.8)';
+          ctx.fill();
+        }
+
+        // 5. Dedication & Personal Message
+        const recipientName = STATE.personalizedData.to || 'Someone Loved';
+        const personalMsg = STATE.personalizedData.message || DEFAULT_DEDICATION.message;
+        const senderName = STATE.personalizedData.from || '';
+
+        // Recipient Title
+        ctx.fillStyle = '#E5C384';
+        ctx.font = '500 20px "Plus Jakarta Sans", sans-serif';
+        ctx.letterSpacing = '6px';
+        ctx.fillText(`PLANTED FOR ${recipientName.toUpperCase()}`, W / 2, H * 0.73);
+
+        // Personal Quote
+        ctx.fillStyle = '#F7F4EB';
+        ctx.font = 'italic 400 48px "Cormorant Garamond", serif';
+        ctx.letterSpacing = '0px';
+        wrapText(ctx, `“${personalMsg}”`, W / 2, H * 0.79, 820, 56);
+
+        // Sender Attribution
+        if (senderName) {
+          ctx.fillStyle = 'rgba(247, 244, 235, 0.65)';
+          ctx.font = '400 22px "Plus Jakarta Sans", sans-serif';
+          ctx.letterSpacing = '4px';
+          ctx.fillText(`— ${senderName}`, W / 2, H * 0.88);
+        }
+
+        // Footer Tagline
+        ctx.fillStyle = 'rgba(229, 195, 132, 0.45)';
+        ctx.font = '300 16px "Plus Jakarta Sans", sans-serif';
+        ctx.letterSpacing = '4px';
+        ctx.fillText('BLOOM.DIGITAL • AN INTERACTIVE BOTANICAL INSTALLATION', W / 2, H - 75);
+
+        // Export to Image Element
+        const dataUrl = canvas.toDataURL('image/png');
+        el.keepsakeCardImg.src = dataUrl;
+        el.keepsakeModalOverlay.classList.add('active');
+      }
+
+      function drawStylizedCardRose(ctx, x, y, scale = 1.0, baseHex = '#C8123C') {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+
+        // Calyx behind the bloom
+        for (let a = 0; a < 5; a++) {
+          ctx.save();
+          ctx.rotate((a * 72 * Math.PI) / 180);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(16, -46, 0, -80);
+          ctx.quadraticCurveTo(-16, -46, 0, 0);
+          ctx.fillStyle = '#23381B';
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // One petal, drawn with the same cupped silhouette as the garden's
+        // roses: a curved centreline, a soft tip and light pooling at the base.
+        const petal = (r, w, curl, depth) => {
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(-w, -r * 0.30, -w * 0.95 + curl, -r * 0.86, curl * 0.5, -r);
+          ctx.bezierCurveTo(w * 0.95 + curl, -r * 0.86, w, -r * 0.30, 0, 0);
+
+          const g = ctx.createRadialGradient(0, -r * 0.62, r * 0.08, 0, -r * 0.30, r * 1.05);
+          g.addColorStop(0, shade(baseHex, 0.30 - depth * 0.05));
+          g.addColorStop(0.26, shade(baseHex, 0.08 + depth * 0.12));
+          g.addColorStop(0.58, shade(baseHex, -0.20 + depth * 0.12));
+          g.addColorStop(1, shade(baseHex, -0.68 + depth * 0.14));
+          ctx.fillStyle = g;
+          ctx.fill();
+
+          const sh = ctx.createLinearGradient(0, -r, 0, 0);
+          sh.addColorStop(0, 'rgba(255,255,255,0.18)');
+          sh.addColorStop(0.45, 'rgba(255,255,255,0.02)');
+          sh.addColorStop(1, 'rgba(18,1,5,0.55)');
+          ctx.fillStyle = sh;
+          ctx.fill();
+
+          ctx.strokeStyle = shade(baseHex, -0.60);
+          ctx.globalAlpha = 0.35;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        };
+
+        const whorls = [
+          { r: 92, count: 9, w: 44, depth: 0.00, spin: 0 },
+          { r: 74, count: 8, w: 37, depth: 0.22, spin: 22 },
+          { r: 58, count: 7, w: 30, depth: 0.46, spin: 44 },
+          { r: 44, count: 6, w: 24, depth: 0.68, spin: 18 },
+          { r: 32, count: 5, w: 19, depth: 0.86, spin: 40 }
+        ];
+        whorls.forEach((l) => {
+          for (let i = 0; i < l.count; i++) {
+            ctx.save();
+            ctx.rotate(((i * (360 / l.count) + l.spin) * Math.PI) / 180);
+            petal(l.r, l.w, l.r * 0.12, l.depth);
+            ctx.restore();
+          }
+        });
+
+        // Occlusion pooling in the throat, then the rolled heart over it
+        const ao = ctx.createRadialGradient(0, 0, 2, 0, 0, 36);
+        ao.addColorStop(0, 'rgba(24,3,10,0.62)');
+        ao.addColorStop(0.7, 'rgba(28,5,12,0.18)');
+        ao.addColorStop(1, 'rgba(28,5,12,0)');
+        ctx.beginPath();
+        ctx.arc(0, 0, 36, 0, Math.PI * 2);
+        ctx.fillStyle = ao;
+        ctx.fill();
+
+        [{ r: 34, count: 7, w: 25, spin: 44 }, { r: 25, count: 6, w: 20, spin: 105 }, { r: 17, count: 5, w: 15, spin: 166 }]
+          .forEach((l, li) => {
+            for (let i = 0; i < l.count; i++) {
+              ctx.save();
+              ctx.rotate(((i * (360 / l.count) + l.spin) * Math.PI) / 180);
+              petal(l.r, l.w, l.w * 0.55, Math.max(0, 0.32 - li * 0.13));
+              ctx.restore();
+            }
+          });
+
+        const ao2 = ctx.createRadialGradient(0, 0, 1, 0, 0, 19);
+        ao2.addColorStop(0, 'rgba(20,2,8,0.66)');
+        ao2.addColorStop(1, 'rgba(20,2,8,0)');
+        ctx.beginPath();
+        ctx.arc(0, 0, 19, 0, Math.PI * 2);
+        ctx.fillStyle = ao2;
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+        const words = text.split(' ');
+        let line = '';
+        let currentY = y;
+
+        for (let n = 0; n < words.length; n++) {
+          const testLine = line + words[n] + ' ';
+          const metrics = ctx.measureText(testLine);
+          const testWidth = metrics.width;
+          if (testWidth > maxWidth && n > 0) {
+            ctx.fillText(line, x, currentY);
+            line = words[n] + ' ';
+            currentY += lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, x, currentY);
+      }
+
+      // Keepsake Modal Event Handlers
+      el.finalSaveCardBtn.addEventListener('click', generateKeepsakeCard);
+
+      el.closeKeepsakeModalBtn.addEventListener('click', () => {
+        el.keepsakeModalOverlay.classList.remove('active');
+      });
+
+      el.keepsakeModalOverlay.addEventListener('click', (e) => {
+        if (e.target === el.keepsakeModalOverlay) {
+          el.keepsakeModalOverlay.classList.remove('active');
+        }
+      });
+
+      // Download Card as PNG Image
+      el.downloadCardBtn.addEventListener('click', () => {
+        const link = document.createElement('a');
+        const name = (STATE.personalizedData.to || 'garden').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        link.download = `bloom-keepsake-${name}.png`;
+        link.href = el.keepsakeCardImg.src;
+        link.click();
+        showToast("Keepsake image saved 🌸");
+      });
+
+      // Share on WhatsApp directly
+      el.shareWhatsAppBtn.addEventListener('click', () => {
+        const to = STATE.personalizedData.to || '';
+        const url = window.location.href;
+        const msg = encodeURIComponent(`I planted a secret botanical bloom for you ${to ? to + ' ' : ''}🌸 Click to watch it grow: ${url}`);
+        window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
+      });
+
+      /* ==========================================================================
+         EDITABLE DEDICATION
+         The closing screen is never finished text: the name it is planted for
+         and the words themselves can be rewritten in place, with or without a
+         gift link. Edits persist locally and are folded back into the URL, so
+         whatever is on screen is exactly what gets shared.
+         ========================================================================== */
+      const DEFAULT_DEDICATION = {
+        to: '',
+        from: '',
+        message: 'You were always meant to bloom.'
+      };
+      const DEDICATION_KEY = 'bloom.dedication';
+      const MAX_NAME = 32;
+      const MAX_MESSAGE = 90;
+
+      function loadDedication() {
+        try {
+          const raw = localStorage.getItem(DEDICATION_KEY);
+          if (!raw) return { ...DEFAULT_DEDICATION };
+          const parsed = JSON.parse(raw);
+          return {
+            to: String(parsed.to || '').slice(0, MAX_NAME),
+            from: String(parsed.from || '').slice(0, MAX_NAME),
+            message: String(parsed.message || '').slice(0, MAX_MESSAGE)
+          };
+        } catch (e) {
+          return { ...DEFAULT_DEDICATION };
+        }
+      }
+
+      function saveDedication(data) {
+        try {
+          localStorage.setItem(DEDICATION_KEY, JSON.stringify(data));
+        } catch (e) { /* private browsing — the edit still lives in STATE */ }
+      }
+
+      /** One line of plain text, trimmed to length. */
+      function cleanLine(value, max) {
+        return String(value == null ? '' : value)
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, max);
+      }
+
+      /**
+       * Pushes whatever is on screen into STATE, localStorage, the address bar
+       * and the gift form, so the card, the share link and the copy all agree.
+       */
+      function syncDedicationToState() {
+        const to = cleanLine(el.finalNameEdit.textContent, MAX_NAME);
+        const message = cleanLine(el.finalMainQuote.textContent, MAX_MESSAGE) || DEFAULT_DEDICATION.message;
+        const from = STATE.personalizedData.from || loadDedication().from || '';
+
+        STATE.personalizedData = { ...STATE.personalizedData, to, from, message };
+        saveDedication({ to, from, message });
+
+        const params = new URLSearchParams(window.location.search);
+        to ? params.set('to', to) : params.delete('to');
+        params.set('message', message);
+        from ? params.set('from', from) : params.delete('from');
+        params.set('type', STATE.activeType);
+        history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+
+        if (el.recipientInput && !el.recipientInput.value) el.recipientInput.value = to;
+        if (el.customMessageInput) el.customMessageInput.value = message;
+        if (el.senderInput && !el.senderInput.value) el.senderInput.value = from;
+      }
+
+      function initEditableDedication() {
+        [el.finalNameEdit, el.finalMainQuote].forEach((field) => {
+          const max = field === el.finalNameEdit ? MAX_NAME : MAX_MESSAGE;
+
+          field.addEventListener('focus', () => {
+            el.finalEditHint.classList.add('dismissed');
+          });
+
+          field.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              field.blur();
+            }
+          });
+
+          // Contenteditable will happily accept pasted markup; it must not.
+          field.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const text = cleanLine((e.clipboardData || window.clipboardData).getData('text'), max);
+            document.execCommand('insertText', false, text);
+          });
+
+          field.addEventListener('blur', () => {
+            field.textContent = cleanLine(field.textContent, max);
+            if (field === el.finalMainQuote && !field.textContent) {
+              field.textContent = DEFAULT_DEDICATION.message;
+            }
+            syncDedicationToState();
+          });
+        });
+      }
+
+      /* ==========================================================================
+         GIFTING MODAL & SHARE LINK GENERATOR
+         ========================================================================== */
+      function openGiftModal() {
+        stopAutoBloomTimer();
+        el.giftModalOverlay.classList.add('active');
+        el.shareResultBox.classList.remove('active');
+      }
+
+      function closeGiftModal() {
+        el.giftModalOverlay.classList.remove('active');
+        if (STATE.phase === 'intro' && !bloomTriggered) {
+          startAutoBloomCountdown();
+        }
+      }
+
+      el.openGiftModalBtn.addEventListener('click', openGiftModal);
+      el.introPlantForSomeoneLink.addEventListener('click', openGiftModal);
+      el.finalSendBloomBtn.addEventListener('click', openGiftModal);
+      el.closeGiftModalBtn.addEventListener('click', closeGiftModal);
+
+      el.giftModalOverlay.addEventListener('click', (e) => {
+        if (e.target === el.giftModalOverlay) closeGiftModal();
+      });
+
+      const intentionChips = document.querySelectorAll('.intention-chip');
+      let selectedType = 'love';
+
+      intentionChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          intentionChips.forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+          selectedType = chip.dataset.type;
+        });
+      });
+
+      const presetChips = document.querySelectorAll('.preset-chip');
+      presetChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          presetChips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          el.customMessageInput.value = chip.dataset.msg;
+        });
+      });
+
+      el.plantBloomForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const recipient = el.recipientInput.value.trim();
+        const message = el.customMessageInput.value.trim();
+        const sender = el.senderInput.value.trim();
+
+        if (!recipient || !message) return;
+
+        const currentUrl = window.location.origin + window.location.pathname;
+        const params = new URLSearchParams();
+        params.set('to', recipient);
+        params.set('message', message);
+        params.set('type', selectedType);
+        if (sender) params.set('from', sender);
+
+        const shareableUrl = `${currentUrl}?${params.toString()}`;
+        el.generatedShareUrl.value = shareableUrl;
+        el.shareResultBox.classList.add('active');
+        el.shareResultBox.scrollIntoView({ behavior: 'smooth' });
+      });
+
+      el.copyShareUrlBtn.addEventListener('click', () => {
+        const urlToCopy = el.generatedShareUrl.value;
+        if (!urlToCopy) return;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(urlToCopy).then(() => {
+            showToast("Bloom link copied to clipboard 🌸");
+          }).catch(() => fallbackCopy(urlToCopy));
+        } else {
+          fallbackCopy(urlToCopy);
+        }
+      });
+
+      function fallbackCopy(text) {
+        el.generatedShareUrl.select();
+        document.execCommand('copy');
+        showToast("Bloom link copied to clipboard 🌸");
+      }
+
+      el.finalRebloomBtn.addEventListener('click', () => {
+        orchestrator.resetToSeed();
+      });
+
+      el.finalShareBtn.addEventListener('click', () => {
+        const shareUrl = window.location.href;
+        const shareTitle = "Someone planted a Bloom for you 🌸";
+        const shareText = "Hold to bloom and watch something beautiful grow.";
+
+        if (navigator.share) {
+          navigator.share({
+            title: shareTitle,
+            text: shareText,
+            url: shareUrl
+          }).catch(() => {});
+        } else {
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+              showToast("Garden link copied to clipboard 🌸");
+            });
+          } else {
+            showToast("Share this link with someone special");
+          }
+        }
+      });
+
+      /* ==========================================================================
+         NOTIFICATIONS & EASTER EGGS
+         ========================================================================== */
+      let toastTimeout = null;
+      function showToast(message) {
+        el.toastNotification.textContent = message;
+        el.toastNotification.classList.add('show');
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+          el.toastNotification.classList.remove('show');
+        }, 3200);
+      }
+
+      let eggTimeout = null;
+      function showEasterEgg(text) {
+        el.easterEggToast.textContent = text;
+        el.easterEggToast.classList.add('show');
+        if (eggTimeout) clearTimeout(eggTimeout);
+        eggTimeout = setTimeout(() => {
+          el.easterEggToast.classList.remove('show');
+        }, 4000);
+      }
+
+      /* ==========================================================================
+         SOUND TOGGLE
+         ========================================================================== */
+      el.soundToggle.addEventListener('click', async () => {
+        STATE.soundEnabled = !STATE.soundEnabled;
+        if (STATE.soundEnabled) {
+          await audio.enable();
+          el.soundMutedIcon.style.display = 'none';
+          el.soundActiveIcon.style.display = 'block';
+          showToast("Ambient sound enabled");
+        } else {
+          audio.disable();
+          el.soundMutedIcon.style.display = 'block';
+          el.soundActiveIcon.style.display = 'none';
+          showToast("Sound muted");
+        }
+      });
+
+      /* ==========================================================================
+         TAB VISIBILITY
+         ========================================================================== */
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          if (STATE.soundEnabled) audio.disable();
+        } else {
+          if (STATE.soundEnabled) audio.enable();
+        }
+      });
+
+      /* ==========================================================================
+         INITIALIZATION
+         ========================================================================== */
+      function initApp() {
+        checkUrlParameters();
+        initEditableDedication();
+        startAutoBloomCountdown();
+      }
+
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', initApp);
+      } else {
+        initApp();
+      }
+
+    })();
+  </script>
+</body>
+</html>
