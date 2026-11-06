@@ -428,17 +428,17 @@ const CONFIG = {
     "one more reason I love you 💫",
     "planted with pure tenderness 🌿",
     "you are my favorite person 🌷",
-    "your smile is my favorite flower 🌼",
+    "your ur my favorite flower 🌼",
     "growing more in love every day 🌹",
     "a garden that will never wilt for you 🌙"
   ],
   roseQuotes: [
-    "🌹 «Questa rosa è per te, colta dal giardino del mio cuore.»",
-    "🌹 «Tra mille fiori in questo prato, tu sei la mia rosa più preziosa.»",
-    "🌹 «Un fiore che non sfiorirà mai, proprio come il mio amore per te.»",
-    "🌹 «Ogni petalo custodisce una ragione per cui ti amo.»",
-    "🌹 «Sei la parte più dolce e luminosa di ogni mia giornata.»",
-    "🌹 «Ho fatto sbocciare questa rosa pensando al tuo sorriso.»"
+    "🌹 «love u.»",
+    "🌹 «love u.»",
+    "🌹 «i love u more.»",
+    "🌹 «i love more and more.»",
+    "🌹 «ur my sunflower.»",
+    "🌹 «i'll always love uu ree.»"
   ],
   presets: [
     {name:"Just because", occasion:"just because", msg:"I thought of you today|so I grew you something|that will never wilt."},
@@ -459,7 +459,7 @@ function clean(v, fallback, max){
 }
 const PARAMS = {
   to: clean(qs.get("to"), "My Love", 24),
-  from: clean(qs.get("from"), "Alessio", 24),
+  from: clean(qs.get("from"), "sunflower", 24),
   occasion: clean(qs.get("occasion"), "just because", 40).toLowerCase(),
   msg: clean(qs.get("msg"), "I couldn't give you flowers|that last forever,|so I grew you a meadow|that never wilts.", 140),
   style: CONFIG.themes.includes((qs.get("style")||"").toLowerCase()) ? qs.get("style").toLowerCase() : "midnight"
